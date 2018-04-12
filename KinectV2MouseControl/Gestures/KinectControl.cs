@@ -91,7 +91,9 @@ namespace KinectV2MouseControl
 		private GestureController gestures = new GestureController();
 		private int WaveDetected = -1;  // 1 = left hand wave, 2 = right hand wave
 
-        public KinectControl()
+		
+
+		public KinectControl()
         {
             // get Active Kinect Sensor
             sensor = KinectSensor.GetDefault();
@@ -279,13 +281,20 @@ namespace KinectV2MouseControl
                 }
             }
         }
-		
+
+		public bool Draw()
+		{
+			return !(this.WaveDetected == -1);
+		}
+
+
 		private void Gestures_GestureRecognised(object sender, GestureEventArgs e)
 		{
 			if (e.type == GestureType.waveLeft)
 			{
 				this.WaveDetected = 1;
 				Console.WriteLine("Detected left wave");
+				
 			}
 			if (e.type == GestureType.waveRight)
 			{
