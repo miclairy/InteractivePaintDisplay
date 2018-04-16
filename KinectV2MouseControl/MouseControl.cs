@@ -3,7 +3,7 @@ using System.Windows;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
     class MouseControl
     {

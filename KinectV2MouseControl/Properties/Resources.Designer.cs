@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace KinectV2MouseControl.Properties
+namespace KinectV2InteractivePaint.Properties
 {
 
 

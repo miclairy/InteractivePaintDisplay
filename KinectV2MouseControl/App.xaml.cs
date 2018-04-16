@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
     public partial class App : Application
     {

@@ -5,9 +5,12 @@ using System.Windows.Shapes;
 using System.Windows.Media.Imaging;
 using System.Windows.Controls;
 using Microsoft.Kinect;
+using Microsoft.Kinect.Input;
 using System.Windows.Media;
+using Microsoft.Kinect.Wpf.Controls;
+using Microsoft.Kinect.Toolkit.Input;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
     public partial class DrawingWindow: Window
     {
@@ -20,37 +23,61 @@ namespace KinectV2MouseControl
 		private KinectSensor kinectSensor;
 		private ColorFrameReader colorFrameReader;
 		private WriteableBitmap colorBitmap = null;
+		private TimeSpan lastTime;
+		private EngagementManager engagement;
+
 
 		public DrawingWindow()
         {
            
 			this.kinectSensor = KinectSensor.GetDefault();
 			this.colorFrameReader = this.kinectSensor.ColorFrameSource.OpenReader();
-			// wire handler for frame arrival
 			this.colorFrameReader.FrameArrived += this.Reader_ColorFrameArrived;
-
 			// create the colorFrameDescription from the ColorFrameSource using Bgra format
 			FrameDescription colorFrameDescription = this.kinectSensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Bgra);
-
 			// create the bitmap to display
 			this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
-
-			// open the sensor
 			this.kinectSensor.Open();
+			KinectCoreWindow kinectCoreWindow = KinectCoreWindow.GetForCurrentThread();
+			kinectCoreWindow.PointerMoved += drawArea_PointerMove;
 
 			// use the window object as the view model in this simple example
 			this.DataContext = this;
 			InitializeComponent();
+
+			KinectRegion.SetKinectRegion(this, kinectRegion);
+			this.kinectRegion.Loaded += kinectRegion_Loaded;
+
+			// App app = ((App)Application.Current);
+			// app.KinectRegion = kinectRegion;
+			this.kinectRegion.KinectSensor = KinectSensor.GetDefault();
+			this.engagement = new EngagementManager(kinectSensor);
+			
+
+		}
+		 
+
+
+       private void kinectRegion_Loaded(object sender, RoutedEventArgs e)
+		{
+			this.kinectRegion.SetKinectOnePersonManualEngagement(engagement);
+			this.kinectRegion.KinectEngagementManager.StartManaging();
 		}
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+			
+			this.engagement.Engaged += (s, args) =>
+			{
+				this.draw = true;
+			};
+
         }
 
         private void drawArea_MouseDown(object sender, MouseButtonEventArgs e)
         {
             draw = true;
-            previousPoint = e.GetPosition(this); //MouseControl.GetCursorPosition();
+           // previousPoint = e.GetPosition(this); //MouseControl.GetCursorPosition();
         }
 
 		private void OnWaveForUserControl(object sender, EventArgs e)
@@ -58,36 +85,59 @@ namespace KinectV2MouseControl
 			draw = true;
 		}
 
-        private void drawArea_MouseMove(object sender, MouseEventArgs e)
+        private void drawArea_PointerMove(object sender, KinectPointerEventArgs args)
         {
-			Console.WriteLine("draw: " + kinectControl.Draw());
-            if (kinectControl.Draw())
-            {
-				if (!drawArea.Children.Contains(handImg))
-				{
-					handImg.Source = handClipArt;
-					handImg.Width = handClipArt.Width / 2;
-					handImg.Height = handClipArt.Height / 2;
-					drawArea.Children.Add(handImg);
-				}
-                Point currentPoint = e.GetPosition(this);// MouseControl.GetCursorPosition();
-				Canvas.SetLeft(handImg, currentPoint.X + handImg.Width / 2);
-				Canvas.SetTop(handImg, currentPoint.Y + handImg.Height / 2);
+			KinectPointerPoint kinectPointerPoint = args.CurrentPoint;
+			Console.WriteLine(engagement.KinectManualEngagedHands);
+			
 
-				if (previousPoint != null)
-				{
-					Line line = new Line();
-					line.Stroke = System.Windows.Media.Brushes.DeepPink;
-					line.X1 = previousPoint.X;
-					line.X2 = currentPoint.X;
-					line.Y1 = previousPoint.Y;
-					line.Y2 = currentPoint.Y;
-					line.StrokeThickness = 3;
+			if (lastTime == TimeSpan.Zero || lastTime != kinectPointerPoint.Properties.BodyTimeCounter)
+			{
+				lastTime = kinectPointerPoint.Properties.BodyTimeCounter;
+				HandType handType = engagement.Draw();
 
-					drawArea.Children.Add(line);
+				if (kinectPointerPoint.Properties.HandType == engagement.Draw())
+				{
+					if (!drawArea.Children.Contains(handImg))
+					{
+						handImg.Source = handClipArt;
+						handImg.Width = handClipArt.Width;
+						handImg.Height = handClipArt.Height;
+						drawArea.Children.Add(handImg);
+					}
+					Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
+					Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
+					Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
+
+					if (previousPoint != null)
+					{
+
+						Line line = new Line();
+						line.Stroke = Brushes.DeepPink;
+						line.X1 = previousPoint.X;
+						line.X2 = currentPoint.X;
+						line.Y1 = previousPoint.Y;
+						line.Y2 = currentPoint.Y;
+						line.StrokeThickness = 3;
+
+						Ellipse ellipse = new Ellipse()
+						{
+							HorizontalAlignment = HorizontalAlignment.Left,
+							Height = 60,
+							Width = 60,
+							StrokeThickness = 5,
+							Stroke = Brushes.Blue
+						};
+
+						drawArea.Children.Add(line);
+						drawArea.Children.Add(ellipse);
+						Canvas.SetLeft(ellipse, currentPoint.X);
+						Canvas.SetTop(ellipse, currentPoint.Y);
+
+					}
+					previousPoint = currentPoint;
 				}
-				previousPoint = currentPoint;
-            }
+			}
 
         }
 
@@ -95,6 +145,7 @@ namespace KinectV2MouseControl
         {
             draw = false;
         }
+
 
 		private void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
 		{

@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Kinect;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
 
 	public class Gesture

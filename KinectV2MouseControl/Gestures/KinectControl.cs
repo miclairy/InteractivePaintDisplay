@@ -3,8 +3,9 @@ using System.Windows;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using Microsoft.Kinect;
+using Microsoft.Kinect.Input;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
     class KinectControl
     {
@@ -89,12 +90,13 @@ namespace KinectV2MouseControl
         bool wasRightGrip = false;
 
 		private GestureController gestures = new GestureController();
-		private int WaveDetected = -1;  // 1 = left hand wave, 2 = right hand wave
+		private HandType WaveDetected = HandType.NONE;  // 1 = left hand wave, 2 = right hand wave
 
 		
 
 		public KinectControl()
         {
+			/*
             // get Active Kinect Sensor
             sensor = KinectSensor.GetDefault();
             // open the reader for the body frames
@@ -115,6 +117,8 @@ namespace KinectV2MouseControl
 
 			// open the sensor
 			sensor.Open();
+			*/
+			
         }
 
 
@@ -199,7 +203,7 @@ namespace KinectV2MouseControl
                     CameraSpacePoint handRight = body.Joints[JointType.HandRight].Position;
                     CameraSpacePoint spineBase = body.Joints[JointType.SpineBase].Position;
 
-                    if (this.WaveDetected == 2) // if right hand waved
+                    if (this.WaveDetected == HandType.RIGHT) 
                     {
                         /* hand x calculated by this. don't use shoulder right as a reference cause the shoulder right
                          * is usually behind the lift right hand, and the position would be inferred and unstable.
@@ -213,7 +217,7 @@ namespace KinectV2MouseControl
                         // smoothing for using should be 0 - 0.95f. The way we smooth the cusor is: oldPos + (newPos - oldPos) * smoothValue
                         float smoothing = 1 - cursorSmoothing;
 						// set cursor position
-						MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
+						//MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
 
                         alreadyTrackedPos = true;
 
@@ -226,7 +230,7 @@ namespace KinectV2MouseControl
                             {
                                 if (!wasRightGrip)
                                 {
-                                    MouseControl.MouseLeftDown();
+                                    //MouseControl.MouseLeftDown();
                                     wasRightGrip = true;
                                 }
                             }
@@ -234,19 +238,19 @@ namespace KinectV2MouseControl
                             {
                                 if (wasRightGrip)
                                 {
-                                    MouseControl.MouseLeftUp();
+                                    //MouseControl.MouseLeftUp();
                                     wasRightGrip = false;
                                 }
                             }
                         }
                     }
-                    else if (this.WaveDetected == 1) // if left hand waved
+                    else if (this.WaveDetected == HandType.LEFT) 
                     {
                         float x = handLeft.X - spineBase.X + 0.2f;
                         float y = spineBase.Y - handLeft.Y + 0.5f;
                         Point curPos = MouseControl.GetCursorPosition();
                         float smoothing = 1 - cursorSmoothing;
-						MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
+						// MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
                         alreadyTrackedPos = true;
 
                         if (doClick && useGripGesture)
@@ -255,7 +259,7 @@ namespace KinectV2MouseControl
                             {
                                 if (!wasLeftGrip)
                                 {
-                                    MouseControl.MouseLeftDown();
+                                  //  MouseControl.MouseLeftDown();
                                     wasLeftGrip = true;
                                 }
                             }
@@ -263,7 +267,7 @@ namespace KinectV2MouseControl
                             {
                                 if (wasLeftGrip)
                                 {
-                                    MouseControl.MouseLeftUp();
+                                //    MouseControl.MouseLeftUp();
                                     wasLeftGrip = false;
                                 }
                             }
@@ -282,9 +286,9 @@ namespace KinectV2MouseControl
             }
         }
 
-		public bool Draw()
+		public HandType Draw()
 		{
-			return !(this.WaveDetected == -1);
+			return this.WaveDetected;
 		}
 
 
@@ -292,13 +296,13 @@ namespace KinectV2MouseControl
 		{
 			if (e.type == GestureType.waveLeft)
 			{
-				this.WaveDetected = 1;
+				this.WaveDetected = HandType.LEFT;
 				Console.WriteLine("Detected left wave");
 				
 			}
 			if (e.type == GestureType.waveRight)
 			{
-				this.WaveDetected = 2;
+				this.WaveDetected = HandType.RIGHT;
 				Console.WriteLine("Detected right wave");
 			}
 		}

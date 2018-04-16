@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Kinect;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
 	public class GestureController
 	{

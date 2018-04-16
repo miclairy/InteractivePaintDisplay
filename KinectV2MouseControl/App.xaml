@@ -1,7 +1,7 @@
-﻿<Application x:Class="KinectV2MouseControl.App"
+﻿<Application x:Class="KinectV2InteractivePaint.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             StartupUri="DrawingWindow.xaml">
     <Application.Resources>
          
     </Application.Resources>

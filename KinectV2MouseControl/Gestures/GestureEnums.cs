@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KinectV2MouseControl
+namespace KinectV2InteractivePaint
 {
 	public enum GestureResult
 	{
