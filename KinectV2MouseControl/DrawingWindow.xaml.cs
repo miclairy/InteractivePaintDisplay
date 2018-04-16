@@ -87,57 +87,53 @@ namespace KinectV2InteractivePaint
 
         private void drawArea_PointerMove(object sender, KinectPointerEventArgs args)
         {
-			KinectPointerPoint kinectPointerPoint = args.CurrentPoint;
-			Console.WriteLine(engagement.KinectManualEngagedHands);
-			
+			KinectPointerPoint kinectPointerPoint = args.CurrentPoint;			
+			lastTime = kinectPointerPoint.Properties.BodyTimeCounter;
+			HandType handType = kinectControl.Draw();
 
-			if (lastTime == TimeSpan.Zero || lastTime != kinectPointerPoint.Properties.BodyTimeCounter)
+			if (args.CurrentPoint.Properties.HandType == engagement.Draw())
 			{
-				lastTime = kinectPointerPoint.Properties.BodyTimeCounter;
-				HandType handType = engagement.Draw();
-
-				if (kinectPointerPoint.Properties.HandType == engagement.Draw())
+				if (!drawArea.Children.Contains(handImg))
 				{
-					if (!drawArea.Children.Contains(handImg))
-					{
-						handImg.Source = handClipArt;
-						handImg.Width = handClipArt.Width;
-						handImg.Height = handClipArt.Height;
-						drawArea.Children.Add(handImg);
-					}
-					Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
-					Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
-					Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
-
-					if (previousPoint != null)
-					{
-
-						Line line = new Line();
-						line.Stroke = Brushes.DeepPink;
-						line.X1 = previousPoint.X;
-						line.X2 = currentPoint.X;
-						line.Y1 = previousPoint.Y;
-						line.Y2 = currentPoint.Y;
-						line.StrokeThickness = 3;
-
-						Ellipse ellipse = new Ellipse()
-						{
-							HorizontalAlignment = HorizontalAlignment.Left,
-							Height = 60,
-							Width = 60,
-							StrokeThickness = 5,
-							Stroke = Brushes.Blue
-						};
-
-						drawArea.Children.Add(line);
-						drawArea.Children.Add(ellipse);
-						Canvas.SetLeft(ellipse, currentPoint.X);
-						Canvas.SetTop(ellipse, currentPoint.Y);
-
-					}
-					previousPoint = currentPoint;
+					handImg.Source = handClipArt;
+					handImg.Width = handClipArt.Width;
+					handImg.Height = handClipArt.Height;
+					drawArea.Children.Add(handImg);
 				}
+
+				Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
+				Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
+				Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
+
+				if (previousPoint != null)
+				{
+
+					Line line = new Line();
+					line.Stroke = Brushes.DeepPink;
+					line.X1 = previousPoint.X;
+					line.X2 = currentPoint.X;
+					line.Y1 = previousPoint.Y;
+					line.Y2 = currentPoint.Y;
+					line.StrokeThickness = 3;
+
+					Ellipse ellipse = new Ellipse()
+					{
+						HorizontalAlignment = HorizontalAlignment.Left,
+						Height = 60,
+						Width = 60,
+						StrokeThickness = 5,
+						Stroke = Brushes.Blue
+					};
+
+					drawArea.Children.Add(line);
+					drawArea.Children.Add(ellipse);
+					Canvas.SetLeft(ellipse, currentPoint.X);
+					Canvas.SetTop(ellipse, currentPoint.Y);
+
+				}
+				previousPoint = currentPoint;
 			}
+			
 
         }
 

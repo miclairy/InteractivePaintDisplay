@@ -66,7 +66,6 @@ namespace KinectV2InteractivePaint
 				}
 			}
 			var currentlyEngagedHands = KinectCoreWindow.KinectManualEngagedHands;
-			Console.WriteLine(currentlyEngagedHands.Count);
 
 			foreach (Body body in this.bodies)
 			{
@@ -90,7 +89,6 @@ namespace KinectV2InteractivePaint
 
 		private void EnsureEngaged(ulong trackingId)
 		{
-			bool alreadyEngaged = false;
 			
 			if (this.trackingId != trackingId)
 			{

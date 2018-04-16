@@ -96,7 +96,7 @@ namespace KinectV2InteractivePaint
 
 		public KinectControl()
         {
-			/*
+			
             // get Active Kinect Sensor
             sensor = KinectSensor.GetDefault();
             // open the reader for the body frames
@@ -117,7 +117,7 @@ namespace KinectV2InteractivePaint
 
 			// open the sensor
 			sensor.Open();
-			*/
+			
 			
         }
 
