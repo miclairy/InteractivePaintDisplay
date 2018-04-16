@@ -95,8 +95,12 @@ namespace KinectV2InteractivePaint
 		private GestureController gestures = new GestureController();
 		private HandType WaveDetected = HandType.NONE;  // 1 = left hand wave, 2 = right hand wave
 		public bool penUp = false;
-		private CameraSpacePoint prevHandLocation;
 		private int stoppedTime;
+		private CameraSpacePoint prevHandLocationR;
+		private CameraSpacePoint prevHandLocationL;
+
+		private int closedTimeoutR = 0;
+		private int closedTimeoutL = 0;
 
 		public KinectControl()
         {
@@ -224,28 +228,55 @@ namespace KinectV2InteractivePaint
 
 						alreadyTrackedPos = true;
 
-
-
-						// Grip gesture
-						if (doClick && useGripGesture)
+						if (body.HandRightState != HandState.Closed)
 						{
-							if (body.HandRightState == HandState.Closed)
+
+							if (handRight.Z < prevHandLocationR.Z)
 							{
-								if (!wasRightGrip)
+								if (handRight.Z + 0.1 < prevHandLocationR.Z)
 								{
-									//MouseControl.MouseLeftDown();
-									wasRightGrip = true;
+									penUp = false;
+									Console.WriteLine("right start again draw");
 								}
 							}
-							else if (body.HandRightState == HandState.Open)
+							else
 							{
-								if (wasRightGrip)
+								closedTimeoutR += 1;
+								prevHandLocationR = handRight;
+							}
+						} else if (closedTimeoutR < 100) {
+							
+							if (handRight.Z > prevHandLocationR.Z)
+							{
+								if (handRight.Z > prevHandLocationR.Z + 0.1)
 								{
-									//MouseControl.MouseLeftUp();
-									wasRightGrip = false;
+									penUp = true;
+									Console.WriteLine("right buffer closed hand stop draw");
 								}
+							}
+							else
+							{
+								closedTimeoutR += 1;
+								prevHandLocationR = handRight;
 							}
 						}
+						else
+						{
+							closedTimeoutR = 0;
+							if (handRight.Z > prevHandLocationR.Z)
+							{
+								if (handRight.Z > prevHandLocationR.Z + 0.1)
+								{
+									penUp = true;
+									Console.WriteLine("right closed hand stop draw");
+								}
+							}
+							else
+							{
+								prevHandLocationR = handRight;
+							}
+						} 
+
 					}
 					else if (this.WaveDetected == HandType.LEFT)
 					{
@@ -255,34 +286,51 @@ namespace KinectV2InteractivePaint
 						float smoothing = 1 - cursorSmoothing;
 						// MouseControl.SetCursorPos((int)x * screenWidth, (int)y * screenHeight);
 						alreadyTrackedPos = true;
-						CameraSpacePoint position = body.Joints[JointType.HandLeft].Position;
+						
 
 						if (body.HandLeftState != HandState.Closed)
 						{							
-							if (position.Z < prevHandLocation.Z)
+							if (handLeft.Z < prevHandLocationL.Z)
 							{
-								if (position.Z + 0.1 < prevHandLocation.Z)
+								if (handLeft.Z + 0.1 < prevHandLocationL.Z)
 								{
 									penUp = false;
-									Console.WriteLine("start again draw");
+									Console.WriteLine("left start again draw");
 								}
 							} else
 							{
-								prevHandLocation = body.Joints[JointType.HandLeft].Position;
+								prevHandLocationL = handLeft;
 							}
-						} else
+						} else if (closedTimeoutL < 100)
 						{
-							if (position.Z > prevHandLocation.Z)
+
+							if (handLeft.Z > prevHandLocationL.Z)
 							{
-								if (position.Z > prevHandLocation.Z + 0.1)
+								if (handLeft.Z > prevHandLocationL.Z + 0.1)
 								{
 									penUp = true;
-									Console.WriteLine("closed hand stop draw");
+									Console.WriteLine("left buffer closed hand stop draw");
 								}
 							}
 							else
 							{
-								prevHandLocation = body.Joints[JointType.HandLeft].Position;
+								closedTimeoutL += 1;
+								prevHandLocationL = handLeft;
+							}
+						}
+						else 
+						{
+							if (handLeft.Z > prevHandLocationL.Z)
+							{
+								if (handLeft.Z > prevHandLocationL.Z + 0.1)
+								{
+									penUp = true;
+									Console.WriteLine("left closed hand stop draw");
+								}
+							}
+							else
+							{
+								prevHandLocationL = handLeft;
 							}
 						}
 						/*
