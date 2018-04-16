@@ -59,6 +59,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Gestures\GestureEnums.cs" />
+    <Compile Include="Gestures\SartDrawingSegments.cs" />
+    <Compile Include="Gestures\StopDrawingSegment1.cs" />
     <Compile Include="Gestures\WaveRightSegments.cs" />
     <Compile Include="Gestures\WaveLeftSegments.cs" />
     <Page Include="DrawingWindow.xaml">

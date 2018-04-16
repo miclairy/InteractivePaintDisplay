@@ -88,11 +88,10 @@ namespace KinectV2InteractivePaint
         private void drawArea_PointerMove(object sender, KinectPointerEventArgs args)
         {
 			KinectPointerPoint kinectPointerPoint = args.CurrentPoint;			
-			lastTime = kinectPointerPoint.Properties.BodyTimeCounter;
-			HandType handType = kinectControl.Draw();
 
-			if (args.CurrentPoint.Properties.HandType == engagement.Draw())
+			if (args.CurrentPoint.Properties.HandType == engagement.Draw() )
 			{
+				/*
 				if (!drawArea.Children.Contains(handImg))
 				{
 					handImg.Source = handClipArt;
@@ -100,39 +99,34 @@ namespace KinectV2InteractivePaint
 					handImg.Height = handClipArt.Height;
 					drawArea.Children.Add(handImg);
 				}
-
+				*/
 				Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
-				Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
-				Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
-
-				if (previousPoint != null)
+				if (!kinectControl.penUp)
 				{
+					/*
+					Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
+					Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
+					*/
 
-					Line line = new Line();
-					line.Stroke = Brushes.DeepPink;
-					line.X1 = previousPoint.X;
-					line.X2 = currentPoint.X;
-					line.Y1 = previousPoint.Y;
-					line.Y2 = currentPoint.Y;
-					line.StrokeThickness = 3;
-
-					Ellipse ellipse = new Ellipse()
+					if (previousPoint != null)
 					{
-						HorizontalAlignment = HorizontalAlignment.Left,
-						Height = 60,
-						Width = 60,
-						StrokeThickness = 5,
-						Stroke = Brushes.Blue
-					};
 
-					drawArea.Children.Add(line);
-					drawArea.Children.Add(ellipse);
-					Canvas.SetLeft(ellipse, currentPoint.X);
-					Canvas.SetTop(ellipse, currentPoint.Y);
+						Line line = new Line();
+						line.Stroke = Brushes.DeepPink;
+						line.X1 = previousPoint.X;
+						line.X2 = currentPoint.X;
+						line.Y1 = previousPoint.Y;
+						line.Y2 = currentPoint.Y;
+						line.StrokeThickness = 3;
 
+
+
+						drawArea.Children.Add(line);
+
+					}
 				}
 				previousPoint = currentPoint;
-			}
+			} 
 			
 
         }

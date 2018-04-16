@@ -88,11 +88,15 @@ namespace KinectV2InteractivePaint
         /// If true, user did a right hand Grip gesture
         /// </summary>
         bool wasRightGrip = false;
+		float handTraveledForwardAmount = 0;
+		float handTraveledBackwardAmount = 0;
+
 
 		private GestureController gestures = new GestureController();
 		private HandType WaveDetected = HandType.NONE;  // 1 = left hand wave, 2 = right hand wave
-
-		
+		public bool penUp = false;
+		private CameraSpacePoint prevHandLocation;
+		private int stoppedTime;
 
 		public KinectControl()
         {
@@ -122,13 +126,12 @@ namespace KinectV2InteractivePaint
         }
 
 
-        
-        /// <summary>
-        /// Pause to click timer
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void Timer_Tick(object sender, EventArgs e)
+		/// <summary>
+		/// Pause to click timer
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void Timer_Tick(object sender, EventArgs e)
         {
             if (!doClick || useGripGesture) return;
 
@@ -192,93 +195,123 @@ namespace KinectV2InteractivePaint
             foreach (Body body in this.bodies)
             {
 
-                // get first tracked body only, notice there's a break below.
-                if (body.IsTracked)
-                {
+				// get first tracked body only, notice there's a break below.
+				if (body.IsTracked)
+				{
 					//recognise user defined gestures
 					this.gestures.UpdateAllGestures(body);
 
-                    // get various skeletal positions
-                    CameraSpacePoint handLeft = body.Joints[JointType.HandLeft].Position;
-                    CameraSpacePoint handRight = body.Joints[JointType.HandRight].Position;
-                    CameraSpacePoint spineBase = body.Joints[JointType.SpineBase].Position;
+					// get various skeletal positions
+					CameraSpacePoint handLeft = body.Joints[JointType.HandLeft].Position;
+					CameraSpacePoint handRight = body.Joints[JointType.HandRight].Position;
+					CameraSpacePoint spineBase = body.Joints[JointType.SpineBase].Position;
 
-                    if (this.WaveDetected == HandType.RIGHT) 
-                    {
-                        /* hand x calculated by this. don't use shoulder right as a reference cause the shoulder right
+					if (this.WaveDetected == HandType.RIGHT)
+					{
+						/* hand x calculated by this. don't use shoulder right as a reference cause the shoulder right
                          * is usually behind the lift right hand, and the position would be inferred and unstable.
                          * because the spine base is on the left of right hand, we plus 0.20f to make it closer to the right. */
-                        float x = handRight.X - spineBase.X + 0.20f;
-                        /* hand y calculated by this. ss spine base is way lower than right hand, plus 0.50f to make it
+						float x = handRight.X - spineBase.X + 0.20f;
+						/* hand y calculated by this. ss spine base is way lower than right hand, plus 0.50f to make it
                          * higer */
-                        float y = spineBase.Y - handRight.Y + 0.50f;
-                        // get current cursor position
-                        Point curPos = MouseControl.GetCursorPosition();
-                        // smoothing for using should be 0 - 0.95f. The way we smooth the cusor is: oldPos + (newPos - oldPos) * smoothValue
-                        float smoothing = 1 - cursorSmoothing;
+						float y = spineBase.Y - handRight.Y + 0.50f;
+						// get current cursor position
+						Point curPos = MouseControl.GetCursorPosition();
+						// smoothing for using should be 0 - 0.95f. The way we smooth the cusor is: oldPos + (newPos - oldPos) * smoothValue
+						float smoothing = 1 - cursorSmoothing;
 						// set cursor position
 						//MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
 
-                        alreadyTrackedPos = true;
+						alreadyTrackedPos = true;
 
-						
 
-                        // Grip gesture
-                        if (doClick && useGripGesture)
-                        {
-                            if (body.HandRightState == HandState.Closed)
-                            {
-                                if (!wasRightGrip)
-                                {
-                                    //MouseControl.MouseLeftDown();
-                                    wasRightGrip = true;
-                                }
-                            }
-                            else if (body.HandRightState == HandState.Open)
-                            {
-                                if (wasRightGrip)
-                                {
-                                    //MouseControl.MouseLeftUp();
-                                    wasRightGrip = false;
-                                }
-                            }
-                        }
-                    }
-                    else if (this.WaveDetected == HandType.LEFT) 
-                    {
-                        float x = handLeft.X - spineBase.X + 0.2f;
-                        float y = spineBase.Y - handLeft.Y + 0.5f;
-                        Point curPos = MouseControl.GetCursorPosition();
-                        float smoothing = 1 - cursorSmoothing;
-						// MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
-                        alreadyTrackedPos = true;
 
-                        if (doClick && useGripGesture)
-                        {
-                            if (body.HandLeftState == HandState.Closed)
-                            {
-                                if (!wasLeftGrip)
-                                {
-                                  //  MouseControl.MouseLeftDown();
-                                    wasLeftGrip = true;
-                                }
-                            }
-                            else if (body.HandLeftState == HandState.Open)
-                            {
-                                if (wasLeftGrip)
-                                {
-                                //    MouseControl.MouseLeftUp();
-                                    wasLeftGrip = false;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        wasLeftGrip = true;
-                        wasRightGrip = true;
-                        alreadyTrackedPos = false;
-                    }
+						// Grip gesture
+						if (doClick && useGripGesture)
+						{
+							if (body.HandRightState == HandState.Closed)
+							{
+								if (!wasRightGrip)
+								{
+									//MouseControl.MouseLeftDown();
+									wasRightGrip = true;
+								}
+							}
+							else if (body.HandRightState == HandState.Open)
+							{
+								if (wasRightGrip)
+								{
+									//MouseControl.MouseLeftUp();
+									wasRightGrip = false;
+								}
+							}
+						}
+					}
+					else if (this.WaveDetected == HandType.LEFT)
+					{
+						float x = handLeft.X - spineBase.X + 0.2f;
+						float y = spineBase.Y - handLeft.Y + 0.5f;
+						Point curPos = MouseControl.GetCursorPosition();
+						float smoothing = 1 - cursorSmoothing;
+						// MouseControl.SetCursorPos((int)x * screenWidth, (int)y * screenHeight);
+						alreadyTrackedPos = true;
+						CameraSpacePoint position = body.Joints[JointType.HandLeft].Position;
+
+						if (body.HandLeftState != HandState.Closed)
+						{							
+							if (position.Z < prevHandLocation.Z)
+							{
+								if (position.Z + 0.1 < prevHandLocation.Z)
+								{
+									penUp = false;
+									Console.WriteLine("start again draw");
+								}
+							} else
+							{
+								prevHandLocation = body.Joints[JointType.HandLeft].Position;
+							}
+						} else
+						{
+							if (position.Z > prevHandLocation.Z)
+							{
+								if (position.Z > prevHandLocation.Z + 0.1)
+								{
+									penUp = true;
+									Console.WriteLine("closed hand stop draw");
+								}
+							}
+							else
+							{
+								prevHandLocation = body.Joints[JointType.HandLeft].Position;
+							}
+						}
+						/*
+						 Console.WriteLine(stoppedTime);
+						if (position.X  <= prevHandLocation.X + 0.05 && position.X  >= prevHandLocation.X - 0.05 && 
+							position.Y <= prevHandLocation.Y + 0.05 && position.Y >= prevHandLocation.Y - 0.05)
+						{
+				
+							
+								stoppedTime += 1;
+								if (stoppedTime > 20)
+								{
+									stoppedTime = 0;
+									penUp = true;
+								}
+							
+								
+						} else
+						{
+							stoppedTime = 0;
+						}
+				*/
+				}
+				else
+				{
+					wasLeftGrip = true;
+					wasRightGrip = true;
+					alreadyTrackedPos = false;
+				}
 
                     // get first tracked body only
                     break;
@@ -305,6 +338,17 @@ namespace KinectV2InteractivePaint
 				this.WaveDetected = HandType.RIGHT;
 				Console.WriteLine("Detected right wave");
 			}
+			if (e.type == GestureType.stopDrawing)
+			{
+				this.penUp = true;
+				Console.WriteLine("Detected stop drawing");
+			}
+			if (e.type == GestureType.startDrawing)
+			{
+				this.penUp = false;
+				Console.WriteLine("Detected start drawing");
+			}
+
 		}
 
 		private void DefineGestures()
@@ -331,9 +375,24 @@ namespace KinectV2InteractivePaint
 			waveRightSegments[4] = waveRightSegment1;
 			waveRightSegments[5] = waveRightSegment2;
 			this.gestures.AddGesture(GestureType.waveRight, waveRightSegments);
+
+			IRelativeGestureSegment[] stopDrawingSegments = new IRelativeGestureSegment[2];
+			StopDrawingSegment1 stopDrawingSegment1 = new StopDrawingSegment1();
+			StopDrawingSegment2 stopDrawingSegment2 = new StopDrawingSegment2();
+			stopDrawingSegments[0] = stopDrawingSegment1;
+			stopDrawingSegments[1] = stopDrawingSegment2;
+		//	this.gestures.AddGesture(GestureType.stopDrawing, stopDrawingSegments);
+
+			IRelativeGestureSegment[] startDrawingSegments = new IRelativeGestureSegment[2];
+			StartDrawingSegment1 startDrawingSegment1 = new StartDrawingSegment1();
+			StartDrawingSegment2 startDrawingSegment2 = new StartDrawingSegment2();
+			startDrawingSegments[0] = startDrawingSegment1;
+			startDrawingSegments[1] = startDrawingSegment2;
+			//this.gestures.AddGesture(GestureType.startDrawing, startDrawingSegments);
+
 		}
 
-        public void Close()
+		public void Close()
         {
             if (timer != null)
             {
