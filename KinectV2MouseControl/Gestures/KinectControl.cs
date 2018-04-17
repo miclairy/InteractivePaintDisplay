@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using Microsoft.Kinect;
 using Microsoft.Kinect.Input;
+using Microsoft.Kinect.Face;
+using System.Collections.Generic;
+using System.Windows.Media;
 
 namespace KinectV2InteractivePaint
 {
@@ -93,8 +96,8 @@ namespace KinectV2InteractivePaint
 
 
 		private GestureController gestures = new GestureController();
-		private HandType WaveDetected = HandType.NONE;  // 1 = left hand wave, 2 = right hand wave
-		public bool penUp = false;
+		private HandType WaveDetected = HandType.NONE;  
+		public bool penUp = true;
 		private int stoppedTime;
 		private CameraSpacePoint prevHandLocationR;
 		private CameraSpacePoint prevHandLocationL;
@@ -102,13 +105,17 @@ namespace KinectV2InteractivePaint
 		private int closedTimeoutR = 0;
 		private int closedTimeoutL = 0;
 
+
+		private CoordinateMapper coordinateMapper = null;
+
 		public KinectControl()
         {
 			
             // get Active Kinect Sensor
             sensor = KinectSensor.GetDefault();
-            // open the reader for the body frames
-            bodyFrameReader = sensor.BodyFrameSource.OpenReader();
+			this.coordinateMapper = this.sensor.CoordinateMapper;
+			// open the reader for the body frames
+			bodyFrameReader = sensor.BodyFrameSource.OpenReader();
             bodyFrameReader.FrameArrived += bodyFrameReader_FrameArrived;
 
             // get screen with and height
@@ -195,177 +202,183 @@ namespace KinectV2InteractivePaint
                 alreadyTrackedPos = false;
                 return;
             }
-
+			int i = 0;
             foreach (Body body in this.bodies)
             {
-
-				// get first tracked body only, notice there's a break below.
-				if (body.IsTracked)
-				{
-					//recognise user defined gestures
-					this.gestures.UpdateAllGestures(body);
-
-					// get various skeletal positions
-					CameraSpacePoint handLeft = body.Joints[JointType.HandLeft].Position;
-					CameraSpacePoint handRight = body.Joints[JointType.HandRight].Position;
-					CameraSpacePoint spineBase = body.Joints[JointType.SpineBase].Position;
-
-					if (this.WaveDetected == HandType.RIGHT)
+				if (i < 1) {
+					// get first tracked body only, notice there's a break below.
+					if (body.IsTracked)
 					{
-						/* hand x calculated by this. don't use shoulder right as a reference cause the shoulder right
-                         * is usually behind the lift right hand, and the position would be inferred and unstable.
-                         * because the spine base is on the left of right hand, we plus 0.20f to make it closer to the right. */
-						float x = handRight.X - spineBase.X + 0.20f;
-						/* hand y calculated by this. ss spine base is way lower than right hand, plus 0.50f to make it
-                         * higer */
-						float y = spineBase.Y - handRight.Y + 0.50f;
-						// get current cursor position
-						Point curPos = MouseControl.GetCursorPosition();
-						// smoothing for using should be 0 - 0.95f. The way we smooth the cusor is: oldPos + (newPos - oldPos) * smoothValue
-						float smoothing = 1 - cursorSmoothing;
-						// set cursor position
-						//MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
+						//recognise user defined gestures
+						this.gestures.UpdateAllGestures(body);
 
-						alreadyTrackedPos = true;
+						// get various skeletal positions
+						CameraSpacePoint handLeft = body.Joints[JointType.HandLeft].Position;
+						CameraSpacePoint handRight = body.Joints[JointType.HandRight].Position;
+						CameraSpacePoint spineBase = body.Joints[JointType.SpineBase].Position;
 
-						if (body.HandRightState != HandState.Closed)
+						if (this.WaveDetected == HandType.RIGHT)
 						{
+							/* hand x calculated by this. don't use shoulder right as a reference cause the shoulder right
+							 * is usually behind the lift right hand, and the position would be inferred and unstable.
+							 * because the spine base is on the left of right hand, we plus 0.20f to make it closer to the right. */
+							float x = handRight.X - spineBase.X + 0.20f;
+							/* hand y calculated by this. ss spine base is way lower than right hand, plus 0.50f to make it
+							 * higer */
+							float y = spineBase.Y - handRight.Y + 0.50f;
+							// get current cursor position
+							Point curPos = MouseControl.GetCursorPosition();
+							// smoothing for using should be 0 - 0.95f. The way we smooth the cusor is: oldPos + (newPos - oldPos) * smoothValue
+							float smoothing = 1 - cursorSmoothing;
+							// set cursor position
+							//MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
 
-							if (handRight.Z < prevHandLocationR.Z)
+							alreadyTrackedPos = true;
+
+							if (body.HandRightState != HandState.Closed)
 							{
-								if (handRight.Z + 0.1 < prevHandLocationR.Z)
+
+								if (handRight.Z < prevHandLocationR.Z)
 								{
-									penUp = false;
-									Console.WriteLine("right start again draw");
+									if (handRight.Z + 0.1 < prevHandLocationR.Z)
+									{
+										penUp = false;
+										Console.WriteLine("right start again draw");
+									}
+								}
+								else
+								{
+									closedTimeoutR += 1;
+									prevHandLocationR = handRight;
+								}
+							}
+							else if (closedTimeoutR < 100)
+							{
+
+								if (handRight.Z > prevHandLocationR.Z)
+								{
+									if (handRight.Z > prevHandLocationR.Z + 0.1)
+									{
+										penUp = true;
+										Console.WriteLine("right buffer closed hand stop draw");
+									}
+								}
+								else
+								{
+									closedTimeoutR += 1;
+									prevHandLocationR = handRight;
 								}
 							}
 							else
 							{
-								closedTimeoutR += 1;
-								prevHandLocationR = handRight;
-							}
-						} else if (closedTimeoutR < 100) {
-							
-							if (handRight.Z > prevHandLocationR.Z)
-							{
-								if (handRight.Z > prevHandLocationR.Z + 0.1)
+								closedTimeoutR = 0;
+								if (handRight.Z > prevHandLocationR.Z)
 								{
-									penUp = true;
-									Console.WriteLine("right buffer closed hand stop draw");
+									if (handRight.Z > prevHandLocationR.Z + 0.1)
+									{
+										penUp = true;
+										Console.WriteLine("right closed hand stop draw");
+									}
+								}
+								else
+								{
+									prevHandLocationR = handRight;
+								}
+							}
+
+						}
+						else if (this.WaveDetected == HandType.LEFT)
+						{
+							float x = handLeft.X - spineBase.X + 0.2f;
+							float y = spineBase.Y - handLeft.Y + 0.5f;
+							Point curPos = MouseControl.GetCursorPosition();
+							float smoothing = 1 - cursorSmoothing;
+							// MouseControl.SetCursorPos((int)x * screenWidth, (int)y * screenHeight);
+							alreadyTrackedPos = true;
+
+
+							if (body.HandLeftState != HandState.Closed)
+							{
+								if (handLeft.Z < prevHandLocationL.Z)
+								{
+									if (handLeft.Z + 0.1 < prevHandLocationL.Z)
+									{
+										penUp = false;
+										Console.WriteLine("left start again draw");
+									}
+								}
+								else
+								{
+									prevHandLocationL = handLeft;
+								}
+							}
+							else if (closedTimeoutL < 100)
+							{
+
+								if (handLeft.Z > prevHandLocationL.Z)
+								{
+									if (handLeft.Z > prevHandLocationL.Z + 0.1)
+									{
+										penUp = true;
+										Console.WriteLine("left buffer closed hand stop draw");
+									}
+								}
+								else
+								{
+									closedTimeoutL += 1;
+									prevHandLocationL = handLeft;
 								}
 							}
 							else
 							{
-								closedTimeoutR += 1;
-								prevHandLocationR = handRight;
+								if (handLeft.Z > prevHandLocationL.Z)
+								{
+									if (handLeft.Z > prevHandLocationL.Z + 0.1)
+									{
+										penUp = true;
+										Console.WriteLine("left closed hand stop draw");
+									}
+								}
+								else
+								{
+									prevHandLocationL = handLeft;
+								}
 							}
+							/*
+							 Console.WriteLine(stoppedTime);
+							if (position.X  <= prevHandLocation.X + 0.05 && position.X  >= prevHandLocation.X - 0.05 && 
+								position.Y <= prevHandLocation.Y + 0.05 && position.Y >= prevHandLocation.Y - 0.05)
+							{
+
+
+									stoppedTime += 1;
+									if (stoppedTime > 20)
+									{
+										stoppedTime = 0;
+										penUp = true;
+									}
+
+
+							} else
+							{
+								stoppedTime = 0;
+							}
+					*/
 						}
 						else
 						{
-							closedTimeoutR = 0;
-							if (handRight.Z > prevHandLocationR.Z)
-							{
-								if (handRight.Z > prevHandLocationR.Z + 0.1)
-								{
-									penUp = true;
-									Console.WriteLine("right closed hand stop draw");
-								}
-							}
-							else
-							{
-								prevHandLocationR = handRight;
-							}
-						} 
+							wasLeftGrip = true;
+							wasRightGrip = true;
+							alreadyTrackedPos = false;
+						}
 
 					}
-					else if (this.WaveDetected == HandType.LEFT)
-					{
-						float x = handLeft.X - spineBase.X + 0.2f;
-						float y = spineBase.Y - handLeft.Y + 0.5f;
-						Point curPos = MouseControl.GetCursorPosition();
-						float smoothing = 1 - cursorSmoothing;
-						// MouseControl.SetCursorPos((int)x * screenWidth, (int)y * screenHeight);
-						alreadyTrackedPos = true;
-						
-
-						if (body.HandLeftState != HandState.Closed)
-						{							
-							if (handLeft.Z < prevHandLocationL.Z)
-							{
-								if (handLeft.Z + 0.1 < prevHandLocationL.Z)
-								{
-									penUp = false;
-									Console.WriteLine("left start again draw");
-								}
-							} else
-							{
-								prevHandLocationL = handLeft;
-							}
-						} else if (closedTimeoutL < 100)
-						{
-
-							if (handLeft.Z > prevHandLocationL.Z)
-							{
-								if (handLeft.Z > prevHandLocationL.Z + 0.1)
-								{
-									penUp = true;
-									Console.WriteLine("left buffer closed hand stop draw");
-								}
-							}
-							else
-							{
-								closedTimeoutL += 1;
-								prevHandLocationL = handLeft;
-							}
-						}
-						else 
-						{
-							if (handLeft.Z > prevHandLocationL.Z)
-							{
-								if (handLeft.Z > prevHandLocationL.Z + 0.1)
-								{
-									penUp = true;
-									Console.WriteLine("left closed hand stop draw");
-								}
-							}
-							else
-							{
-								prevHandLocationL = handLeft;
-							}
-						}
-						/*
-						 Console.WriteLine(stoppedTime);
-						if (position.X  <= prevHandLocation.X + 0.05 && position.X  >= prevHandLocation.X - 0.05 && 
-							position.Y <= prevHandLocation.Y + 0.05 && position.Y >= prevHandLocation.Y - 0.05)
-						{
-				
-							
-								stoppedTime += 1;
-								if (stoppedTime > 20)
-								{
-									stoppedTime = 0;
-									penUp = true;
-								}
-							
-								
-						} else
-						{
-							stoppedTime = 0;
-						}
-				*/
-				}
-				else
-				{
-					wasLeftGrip = true;
-					wasRightGrip = true;
-					alreadyTrackedPos = false;
-				}
-
-                    // get first tracked body only
-                    break;
                 }
+
+
             }
         }
+
 
 		public HandType Draw()
 		{
