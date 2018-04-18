@@ -392,11 +392,12 @@ namespace KinectV2InteractivePaint
 			{
 				this.WaveDetected = HandType.LEFT;
 				Console.WriteLine("Detected left wave");
-				
+				this.penUp = true;
 			}
 			if (e.type == GestureType.waveRight)
 			{
 				this.WaveDetected = HandType.RIGHT;
+				this.penUp = true;
 				Console.WriteLine("Detected right wave");
 			}
 			if (e.type == GestureType.stopDrawing)

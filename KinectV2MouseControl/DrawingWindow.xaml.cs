@@ -68,8 +68,8 @@ namespace KinectV2InteractivePaint
 			// create the bitmap to display
 			this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
 
-			this.bodyFrameReader = this.kinectSensor.BodyFrameSource.OpenReader();
-			this.bodyFrameReader.FrameArrived += this.Reader_BodyFrameArrived;
+			bodyFrameReader = this.kinectSensor.BodyFrameSource.OpenReader();
+			bodyFrameReader.FrameArrived += Reader_BodyFrameArrived;
 			this.bodyCount = this.kinectSensor.BodyFrameSource.BodyCount;
 			this.bodies = new Body[this.bodyCount];
 			//this.faceFrameSources = new FaceFrameSource[this.bodyCount];
@@ -147,11 +147,7 @@ namespace KinectV2InteractivePaint
 				this.draw = true;
 			};
 
-			if (this.bodyFrameReader != null)
-			{
-				// wire handler for body frame arrival
-				this.bodyFrameReader.FrameArrived += this.Reader_BodyFrameArrived;
-			}
+			
 
 		}
 
@@ -199,33 +195,76 @@ namespace KinectV2InteractivePaint
 
 		private void Reader_BodyFrameArrived(object sender, BodyFrameArrivedEventArgs e)
 		{
-
-			using (var bodyFrame = e.FrameReference.AcquireFrame())
+			bool dataReceived = false;
+			if (e.FrameReference != null)
 			{
-				if (bodyFrame != null)
+				using (BodyFrame bodyFrame = e.FrameReference.AcquireFrame())
 				{
-					bodyFrame.GetAndRefreshBodyData(this.bodies);
-
-					for (int i = 0; i < this.bodyCount; i++)
+					if (bodyFrame != null)
 					{
-						if (this.faceFrameSources[i].IsTrackingIdValid)
+						if (this.bodies == null)
 						{
-							if (this.faceFrameResults[i] != null)
-							{
-								this.DrawFaceFrameResults(i, this.faceFrameResults[i]);
-							}
+							this.bodies = new Body[bodyFrame.BodyCount];
+						}
 
-						}
-						else
-						{
-							if (this.bodies[i].IsTracked)
-							{
-								this.faceFrameSources[i].TrackingId = this.bodies[i].TrackingId;
-							}
-						}
+						bodyFrame.GetAndRefreshBodyData(this.bodies);
+						dataReceived = true;
 					}
 				}
 			}
+			if (!dataReceived)
+			{
+				
+				return;
+			}
+
+
+			for (int i = 0; i < this.bodyCount; i++)
+			{
+					Body body = this.bodies[i];
+					if (body.IsTracked)
+					{
+
+						CameraSpacePoint handLeftPoint = body.Joints[JointType.HandLeft].Position;
+						CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
+					//if (this.faceFrameSources[i].IsTrackingIdValid) { 
+								
+						ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
+						ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
+
+						//Console.WriteLine(body.IsTracked);
+
+						if (engagement.Draw() == HandType.LEFT)
+						{
+							Point currentPoint = new Point(handLeft.X, handLeft.Y);
+							Draw(currentPoint);
+						}
+						if (engagement.Draw() == HandType.RIGHT)
+						{
+							Point currentPoint = new Point(handRight.X, handRight.Y);
+							Draw(currentPoint);
+						}
+					
+				}
+
+				if (this.faceFrameSources[i].IsTrackingIdValid)
+				{
+					if (this.faceFrameResults[i] != null)
+					{
+						this.DrawFaceFrameResults(i, this.faceFrameResults[i]);
+					}
+
+				}
+				else
+				{
+					if (this.bodies[i].IsTracked)
+					{
+						this.faceFrameSources[i].TrackingId = this.bodies[i].TrackingId;
+					}
+				}
+			}
+				
+			
 
 		}
 
@@ -275,7 +314,7 @@ namespace KinectV2InteractivePaint
 
 			Canvas.SetLeft(faceBox, faceBoxSource.Left );
 			Canvas.SetTop(faceBox, faceBoxSource.Top );
-			// drawArea.Children.Add(faceBox);
+			//drawArea.Children.Add(faceBox);
 
 			string faceText = string.Empty;
 
@@ -363,76 +402,79 @@ namespace KinectV2InteractivePaint
 				}
 				*/
 				Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
-				if (!kinectControl.penUp)
-				{
-					if (currentDrawingSegment == null)
-					{
-						currentDrawingSegment = new Polyline();
-						currentDrawingSegment.Stroke = Brushes.MediumPurple;
-						currentDrawingSegment.StrokeThickness = 3;
-					}
-					/*
-					Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
-					Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
-					*/
-
-					if (previousPoint != null)
-					{
-						currentDrawingSegment.Points.Add(currentPoint);
-
-						Line line = new Line();
-						line.Stroke = Brushes.DeepPink;
-						line.X1 = previousPoint.X;
-						line.X2 = currentPoint.X;
-						line.Y1 = previousPoint.Y;
-						line.Y2 = currentPoint.Y;
-						line.StrokeThickness = 3;
-
-						previousPoint = currentPoint;
-						
-						drawArea.Children.Add(line);
-						
-					}
-				} else
-				{
-					previousPoint = currentPoint;
-					if (currentDrawingSegment != null)
-					{
-						drawingSegments.Add(currentDrawingSegment);						
-						DockPanel screenDisplay = userVideo;
-						drawArea.Children.Clear();
-						drawArea.Children.Add(screenDisplay);
-						// drawArea.Children.Add(rect);
-						Canvas.SetLeft(rect, 500);
-						Canvas.SetTop(rect, 500);
-
-						foreach (Polyline poly in drawingSegments)
-						{
-							drawArea.Children.Add(poly);
-						}
-						foreach (Point p in currentDrawingSegment.Points)
-						{
-							int drawingSegmentFace = this.PointOnFace(p);
-							if (drawingSegmentFace != -1)
-							{
-								if (!drawingSegmentsFaces.ContainsKey(drawingSegmentFace))
-								{
-									drawingSegmentsFaces.Add(drawingSegmentFace, new List<Polyline>());
-								}
-								drawingSegmentsFaces[drawingSegmentFace].Add(currentDrawingSegment);
-
-								// only take first face
-								break;
-							}
-						}
-						currentDrawingSegment = null;
-					}
-				}
-				
+				// Draw(currentPoint);
 			} 
-			
-
         }
+
+		private void Draw(Point currentPoint)
+		{
+			if (!kinectControl.penUp)
+			{
+				if (currentDrawingSegment == null)
+				{
+					currentDrawingSegment = new Polyline();
+					currentDrawingSegment.Stroke = Brushes.MediumPurple;
+					currentDrawingSegment.StrokeThickness = 3;
+				}
+				/*
+				Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
+				Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
+				*/
+
+				if (previousPoint != null)
+				{
+					currentDrawingSegment.Points.Add(currentPoint);
+
+					Line line = new Line();
+					line.Stroke = Brushes.DeepPink;
+					line.X1 = previousPoint.X;
+					line.X2 = currentPoint.X;
+					line.Y1 = previousPoint.Y;
+					line.Y2 = currentPoint.Y;
+					line.StrokeThickness = 3;
+
+					previousPoint = currentPoint;
+
+					drawArea.Children.Add(line);
+
+				}
+			}
+			else
+			{
+				previousPoint = currentPoint;
+				if (currentDrawingSegment != null)
+				{
+					drawingSegments.Add(currentDrawingSegment);
+					DockPanel screenDisplay = userVideo;
+					drawArea.Children.Clear();
+					drawArea.Children.Add(screenDisplay);
+					// drawArea.Children.Add(rect);
+					Canvas.SetLeft(rect, 500);
+					Canvas.SetTop(rect, 500);
+
+					foreach (Polyline poly in drawingSegments)
+					{
+						drawArea.Children.Add(poly);
+					}
+					foreach (Point p in currentDrawingSegment.Points)
+					{
+						int drawingSegmentFace = this.PointOnFace(p);
+						if (drawingSegmentFace != -1)
+						{
+							if (!drawingSegmentsFaces.ContainsKey(drawingSegmentFace))
+							{
+								drawingSegmentsFaces.Add(drawingSegmentFace, new List<Polyline>());
+							}
+							drawingSegmentsFaces[drawingSegmentFace].Add(currentDrawingSegment);
+
+							// only take first face
+							break;
+						}
+					}
+					currentDrawingSegment = null;
+				}
+			}
+		}
 
 		private int PointOnFace(Point currentPoint)
 		{
