@@ -7,13 +7,10 @@
 	
 
 		<ContentControl x:Name="inputRegion">
-				<Canvas x:Name="drawArea" MouseDown="drawArea_MouseDown" RenderTransformOrigin="0.5,0.5" Background="Red" MouseUp="drawArea_MouseUp" >
-					<DockPanel x:Name="userVideo">
-						<Viewbox >
-							<Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
-						</Viewbox>
-					</DockPanel>
-				</Canvas>
+		<Canvas x:Name="drawArea" MouseDown="drawArea_MouseDown" RenderTransformOrigin="0.5,0.5" MouseUp="drawArea_MouseUp" >
+			
+					
+		</Canvas>
 		</ContentControl>
 
 	

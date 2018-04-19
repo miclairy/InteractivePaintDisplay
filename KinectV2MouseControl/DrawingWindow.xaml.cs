@@ -69,6 +69,7 @@ namespace KinectV2InteractivePaint
 			// create the bitmap to display
 			this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
 
+
 			bodyFrameReader = this.kinectSensor.BodyFrameSource.OpenReader();
 			bodyFrameReader.FrameArrived += Reader_BodyFrameArrived;
 			this.bodyCount = this.kinectSensor.BodyFrameSource.BodyCount;
@@ -123,8 +124,6 @@ namespace KinectV2InteractivePaint
 
 		}
 
-	
-
 		private void kinectRegion_Loaded(object sender, RoutedEventArgs e)
 		{
 		//	this.kinectRegion.KinectSensor = KinectSensor.GetDefault();
@@ -144,9 +143,12 @@ namespace KinectV2InteractivePaint
 				}
 			}
 
+			ImageBrush brush = new ImageBrush();
+			brush.ImageSource = colorBitmap;
+			brush.Stretch = Stretch.UniformToFill;
+			drawArea.Background = brush;
+
 		}
-
-
 
 		private void Reader_FaceFrameArrived(object sender, FaceFrameArrivedEventArgs e)
 		{
@@ -223,16 +225,36 @@ namespace KinectV2InteractivePaint
 
 				if (body.IsTracked && engagement.engagedBodies.Contains(body.TrackingId))
 				{
-
+					
 					
 					CameraSpacePoint handLeftPoint = body.Joints[JointType.HandLeft].Position;
 					CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
 					// Console.WriteLine(body.HandLeftConfidence);
-								
-					ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
-					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
-					//	Console.WriteLine(handLeft.X + " " + handLeft.Y);
+
 					
+
+
+
+					ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
+					/*float percentX = handLeft.X / displayWidth;
+					handLeft.X = percentX * (float) Width;
+					float percentY = handLeft.Y / displayHeight;
+					handLeft.Y = percentY * (float)Height;*/
+
+
+					float scaleFactor = (float) Width / displayWidth;
+					int origin = displayWidth / 2;
+					handLeft.X = scaleFactor * (handLeft.X - 0);
+					handLeft.Y = scaleFactor * (handLeft.Y - 0);
+					Console.WriteLine(handLeft.X +" " + coordinateMapper.MapCameraPointToColorSpace(handLeftPoint).X);
+					
+
+
+					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
+					handRight.X = scaleFactor * (handRight.X - 0);
+					handRight.Y = scaleFactor * (handRight.Y - 0);
+					//	Console.WriteLine(handLeft.X + " " + handLeft.Y);
+
 					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
 					{
 						startStopGestures.DetectLeftGestures(body, handLeftPoint);
@@ -383,8 +405,6 @@ namespace KinectV2InteractivePaint
 			return isFaceValid;
 		}
 
-
-
 		private void drawArea_MouseDown(object sender, MouseButtonEventArgs e)
         {
             draw = true;
@@ -408,6 +428,7 @@ namespace KinectV2InteractivePaint
 			} 
         }
 
+		// main draw method
 		private void Draw(Point currentPoint, ulong body)
 		{
 			Image penImg = null;
@@ -537,9 +558,9 @@ namespace KinectV2InteractivePaint
 				if (currentDrawingSegment.Points.Count > 1)
 				{
 					drawingSegments.Add(currentDrawingSegment);
-					DockPanel screenDisplay = userVideo;
+					// DockPanel screenDisplay = userVideo;
 					drawArea.Children.Clear();
-					drawArea.Children.Add(screenDisplay);
+					// drawArea.Children.Add(screenDisplay);
 					// drawArea.Children.Add(rect);
 					// Canvas.SetLeft(rect, 500);
 					// Canvas.SetTop(rect, 500);
