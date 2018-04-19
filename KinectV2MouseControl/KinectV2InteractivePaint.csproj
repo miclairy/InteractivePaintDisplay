@@ -63,6 +63,7 @@
     </ApplicationDefinition>
     <Compile Include="Gestures\GestureEnums.cs" />
     <Compile Include="Gestures\SartDrawingSegments.cs" />
+    <Compile Include="Gestures\StartStopGestures.cs" />
     <Compile Include="Gestures\StopDrawingSegment1.cs" />
     <Compile Include="Gestures\WaveRightSegments.cs" />
     <Compile Include="Gestures\WaveLeftSegments.cs" />
@@ -125,6 +126,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="assets\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="penDownLeft.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="penDownRight.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

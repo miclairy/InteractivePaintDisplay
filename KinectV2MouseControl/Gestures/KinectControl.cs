@@ -112,7 +112,7 @@ namespace KinectV2InteractivePaint
         {
 			
             // get Active Kinect Sensor
-            sensor = KinectSensor.GetDefault();
+       /*     sensor = KinectSensor.GetDefault();
 			this.coordinateMapper = this.sensor.CoordinateMapper;
 			// open the reader for the body frames
 			bodyFrameReader = sensor.BodyFrameSource.OpenReader();
@@ -133,7 +133,7 @@ namespace KinectV2InteractivePaint
 			// open the sensor
 			sensor.Open();
 			
-			
+		*/	
         }
 
 
@@ -210,7 +210,7 @@ namespace KinectV2InteractivePaint
 					if (body.IsTracked)
 					{
 						//recognise user defined gestures
-						this.gestures.UpdateAllGestures(body);
+					 //	this.gestures.UpdateAllGestures(body);
 
 						// get various skeletal positions
 						CameraSpacePoint handLeft = body.Joints[JointType.HandLeft].Position;

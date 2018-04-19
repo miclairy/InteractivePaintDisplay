@@ -1,29 +1,27 @@
-﻿using System.Windows;
-using System;
-using System.Windows.Input;
-using System.Windows.Shapes;
-using System.Windows.Media.Imaging;
-using System.Windows.Controls;
-using Microsoft.Kinect;
-using Microsoft.Kinect.Input;
-using System.Windows.Media;
-using Microsoft.Kinect.Wpf.Controls;
-using Microsoft.Kinect.Toolkit.Input;
+﻿using Microsoft.Kinect;
 using Microsoft.Kinect.Face;
+using Microsoft.Kinect.Input;
+using Microsoft.Kinect.Wpf.Controls;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Globalization;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace KinectV2InteractivePaint
 {
-    public partial class DrawingWindow: Window
+	public partial class DrawingWindow: Window
     {
         MouseControl mouseControl = new MouseControl();
 		KinectControl kinectControl = new KinectControl();
         private Point previousPoint;
 		private bool draw = false;
-		private BitmapImage handClipArt = new BitmapImage(new Uri("pack://application:,,,/hand.bmp", UriKind.Absolute));
-		private Image handImg = new Image();
+		private BitmapImage penLeftClipArt = new BitmapImage(new Uri("pack://application:,,,/penDownLeft.png", UriKind.Absolute));
+		private BitmapImage penRightClipArt = new BitmapImage(new Uri("pack://application:,,,/penDownRight.png", UriKind.Absolute));
+		private Image penImg = new Image();
 		private KinectSensor kinectSensor;
 		private ColorFrameReader colorFrameReader;
 		private CoordinateMapper coordinateMapper;
@@ -33,10 +31,11 @@ namespace KinectV2InteractivePaint
 		private EngagementManager engagement;
 		private int bodyCount;
 		private Body[] bodies;
+		private StartStopGestures startStopGestures = new StartStopGestures(); 
 		private FaceFrameSource[] faceFrameSources = null;
 		private FaceFrameReader[] faceFrameReaders = null;
 		private FaceFrameResult[] faceFrameResults;
-
+		RotateTransform rotateTransform = new RotateTransform();
 		private int displayWidth;
 		private int displayHeight;
 
@@ -102,12 +101,12 @@ namespace KinectV2InteractivePaint
 			// allocate storage to store face frame results for each face in the FOV
 			this.faceFrameResults = new FaceFrameResult[this.bodyCount];
 			this.previousResults = new FaceFrameResult[this.bodyCount];
-
+			//this.Cursor = Cursors.None;
 
 			this.kinectSensor.Open();
 			KinectCoreWindow kinectCoreWindow = KinectCoreWindow.GetForCurrentThread();
 			kinectCoreWindow.PointerMoved += drawArea_PointerMove;
-
+			
 			// use the window object as the view model in this simple example
 			this.DataContext = this;
 
@@ -147,9 +146,11 @@ namespace KinectV2InteractivePaint
 				this.draw = true;
 			};
 
-			
+
 
 		}
+
+
 
 		private void Reader_FaceFrameArrived(object sender, FaceFrameArrivedEventArgs e)
 		{
@@ -232,17 +233,27 @@ namespace KinectV2InteractivePaint
 						ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
 						ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
 
-						//Console.WriteLine(body.IsTracked);
+					//Console.WriteLine(body.IsTracked);
+					
 
 						if (engagement.Draw() == HandType.LEFT)
 						{
+							startStopGestures.DetectLeftGestures(body, handLeftPoint);
+
 							Point currentPoint = new Point(handLeft.X, handLeft.Y);
-							Draw(currentPoint);
-						}
+							if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+								currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
+								Draw(currentPoint);
+							}
 						if (engagement.Draw() == HandType.RIGHT)
 						{
+							startStopGestures.DetectRightGestures(body, handRightPoint);
 							Point currentPoint = new Point(handRight.X, handRight.Y);
+							if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+								currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
+							{
 							Draw(currentPoint);
+						}
 						}
 					
 				}
@@ -285,7 +296,7 @@ namespace KinectV2InteractivePaint
 					for (int j = 0; j < drawingSegmentsFaces[faceIndex].Count; j++)
 					{
 
-						Console.WriteLine(drawingSegmentsFaces[faceIndex][j].Points);
+						// Console.WriteLine(drawingSegmentsFaces[faceIndex][j].Points);
 						if (movementX != 0 || movementY != 0)
 						{
 							PointCollection polyline = drawingSegmentsFaces[faceIndex][j].Points;
@@ -392,15 +403,7 @@ namespace KinectV2InteractivePaint
 
 			if (args.CurrentPoint.Properties.HandType == engagement.Draw() )
 			{
-				/*
-				if (!drawArea.Children.Contains(handImg))
-				{
-					handImg.Source = handClipArt;
-					handImg.Width = handClipArt.Width;
-					handImg.Height = handClipArt.Height;
-					drawArea.Children.Add(handImg);
-				}
-				*/
+			
 				Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
 				// Draw(currentPoint);
 			} 
@@ -408,7 +411,7 @@ namespace KinectV2InteractivePaint
 
 		private void Draw(Point currentPoint)
 		{
-			if (!kinectControl.penUp)
+			if (!startStopGestures.penUp)
 			{
 				if (currentDrawingSegment == null)
 				{
@@ -416,10 +419,36 @@ namespace KinectV2InteractivePaint
 					currentDrawingSegment.Stroke = Brushes.MediumPurple;
 					currentDrawingSegment.StrokeThickness = 3;
 				}
-				/*
-				Canvas.SetLeft(handImg, previousPoint.X + handImg.Width / 2);
-				Canvas.SetTop(handImg, previousPoint.Y + handImg.Height / 2);
-				*/
+
+				if (drawArea.Children.Contains(penImg))
+				{
+					drawArea.Children.Remove(penImg);
+				}
+				if (engagement.Draw() == HandType.LEFT)
+				{
+					penImg.Source = penLeftClipArt;
+					penImg.Width = penLeftClipArt.Width / 4;
+					penImg.Height = penLeftClipArt.Height / 4;
+					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
+					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
+					currentPoint.X += penImg.Width / 2;
+					currentPoint.Y += penImg.Height / 2;
+				}
+				if (engagement.Draw() == HandType.RIGHT)
+				{
+					penImg.Source = penRightClipArt;
+					penImg.Width = penRightClipArt.Width / 4;
+					penImg.Height = penRightClipArt.Height / 4;
+					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
+					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
+					currentPoint.X -= penImg.Width / 2;
+					currentPoint.Y += penImg.Height / 2;
+				}
+					rotateTransform.Angle = 0;
+					penImg.RenderTransform = rotateTransform;
+
+				drawArea.Children.Add(penImg);
+				
 
 				if (previousPoint != null)
 				{
@@ -442,6 +471,36 @@ namespace KinectV2InteractivePaint
 			else
 			{
 				previousPoint = currentPoint;
+				if (drawArea.Children.Contains(penImg))
+				{
+					
+					drawArea.Children.Remove(penImg);
+				}
+				if (engagement.Draw() == HandType.LEFT)
+				{
+					penImg.Source = penLeftClipArt;
+					penImg.Width = penLeftClipArt.Width / 4;
+					penImg.Height = penLeftClipArt.Height / 4;
+					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
+					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
+					currentPoint.X += penImg.Width / 2;
+					currentPoint.Y += penImg.Height / 2;
+					rotateTransform.Angle = -25;
+					drawArea.Children.Add(penImg);
+				}
+				if (engagement.Draw() == HandType.RIGHT)
+				{
+					penImg.Source = penRightClipArt;
+					penImg.Width = penRightClipArt.Width / 4;
+					penImg.Height = penRightClipArt.Height / 4;
+					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
+					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
+					currentPoint.X -= penImg.Width / 2;
+					currentPoint.Y += penImg.Height / 2;
+					rotateTransform.Angle = 25;
+					drawArea.Children.Add(penImg);
+				}
+
 				if (currentDrawingSegment != null)
 				{
 					drawingSegments.Add(currentDrawingSegment);
