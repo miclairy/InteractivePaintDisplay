@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Kinect;
 using Microsoft.Kinect.Input;
 
@@ -17,17 +18,18 @@ namespace KinectV2InteractivePaint
 
 		private GestureController gestures = new GestureController();
 		private HandType WaveDetected = HandType.NONE;
-		public bool penUp = true;
+	//	public bool penUp = true;
+		public Dictionary<ulong, bool> penUp = new Dictionary<ulong, bool>();
 		private int stoppedTime;
-		private CameraSpacePoint prevHandLocationR;
-		private CameraSpacePoint prevHandLocationL;
+		private Dictionary<ulong, CameraSpacePoint > prevHandLocationR = new Dictionary<ulong, CameraSpacePoint>();
+		private Dictionary<ulong, CameraSpacePoint > prevHandLocationL = new Dictionary<ulong, CameraSpacePoint>();
 
 		private int closedTimeoutR = 0;
 		private int closedTimeoutL = 0;
-		private CameraSpacePoint prevHandLocationBackwardsL;
-		private CameraSpacePoint prevHandLocationForewardsL;
-		private CameraSpacePoint prevHandLocationBackwardsR;
-		private CameraSpacePoint prevHandLocationForewardsR;
+		private Dictionary<ulong, CameraSpacePoint> prevHandLocationBackwardsL = new Dictionary<ulong, CameraSpacePoint>();
+		private Dictionary<ulong, CameraSpacePoint> prevHandLocationForewardsL = new Dictionary<ulong, CameraSpacePoint>();
+		private Dictionary<ulong, CameraSpacePoint> prevHandLocationBackwardsR = new Dictionary<ulong, CameraSpacePoint>();
+		private Dictionary<ulong, CameraSpacePoint> prevHandLocationForewardsR = new Dictionary<ulong, CameraSpacePoint>();
 
 		public StartStopGestures()
 		{
@@ -35,68 +37,98 @@ namespace KinectV2InteractivePaint
 
 		public void DetectRightGestures(Body body, CameraSpacePoint handRight)
 		{
-			if (Math.Abs(handRight.Z - prevHandLocationR.Z) >= Math.Abs(handRight.X - prevHandLocationR.X) &&
-				Math.Abs(handRight.Z - prevHandLocationR.Z) >= Math.Abs(handRight.Y - prevHandLocationR.Y))
+			ulong id = body.TrackingId;
+			if (!penUp.ContainsKey(body.TrackingId))
 			{
-				if (handRight.Z < prevHandLocationR.Z) // moveing forward
+				penUp.Add(body.TrackingId, true);
+			}
+			if (!prevHandLocationR.ContainsKey(id))
+			{
+				prevHandLocationR.Add(id, handRight);
+				prevHandLocationBackwardsR.Add(id, handRight);
+				prevHandLocationForewardsR.Add(id, handRight);
+
+			}
+			if (Math.Abs(handRight.Z - prevHandLocationR[id].Z) >= Math.Abs(handRight.X - prevHandLocationR[id].X) &&
+				Math.Abs(handRight.Z - prevHandLocationR[id].Z) >= Math.Abs(handRight.Y - prevHandLocationR[id].Y))
+			{
+				if (handRight.Z < prevHandLocationR[id].Z) // moveing forward
 				{
-					if (handRight.Z + 0.2 < prevHandLocationForewardsR.Z)
+					if (handRight.Z + 0.2 < prevHandLocationForewardsR[id].Z)
 					{
-						penUp = false;
+						penUp[body.TrackingId] = false;
 						Console.WriteLine("Right start again draw");
 					}
-					prevHandLocationBackwardsR = handRight;
+					prevHandLocationBackwardsR[id] = handRight;
 
 				}
-				if (handRight.Z > prevHandLocationR.Z) // moving backwards
+				if (handRight.Z > prevHandLocationR[id].Z) // moving backwards
 				{
 
-					if (handRight.Z > prevHandLocationBackwardsR.Z + 0.2)
+					if (handRight.Z > prevHandLocationBackwardsR[id].Z + 0.2)
 					{
-						penUp = true;
+						penUp[body.TrackingId] = true;
 						Console.WriteLine("Right hand stop draw");
 					}
 
-					prevHandLocationForewardsR = handRight;
+					prevHandLocationForewardsR[id] = handRight;
 				}
 
 			}
-			prevHandLocationR = handRight;
+			prevHandLocationR[id] = handRight;
 		}
 
 		public void DetectLeftGestures(Body body, CameraSpacePoint handLeft)
 		{
-			if (Math.Abs(handLeft.Z - prevHandLocationL.Z) >= Math.Abs(handLeft.X - prevHandLocationL.X) &&
-				Math.Abs(handLeft.Z - prevHandLocationL.Z) >= Math.Abs(handLeft.Y - prevHandLocationL.Y))
+			ulong id = body.TrackingId;
+			if (!penUp.ContainsKey(body.TrackingId))
 			{
-				if (handLeft.Z < prevHandLocationL.Z) // moveing forward
+				penUp.Add(body.TrackingId, true);
+			}
+			if (!prevHandLocationL.ContainsKey(id))
+			{
+				prevHandLocationL.Add(id, handLeft);
+				prevHandLocationForewardsL.Add(id, handLeft);
+				prevHandLocationBackwardsL.Add(id, handLeft);
+			}
+			if (Math.Abs(handLeft.Z - prevHandLocationL[id].Z) >= Math.Abs(handLeft.X - prevHandLocationL[id].X) &&
+				Math.Abs(handLeft.Z - prevHandLocationL[id].Z) >= Math.Abs(handLeft.Y - prevHandLocationL[id].Y))
+			{
+				if (handLeft.Z < prevHandLocationL[id].Z) // moving forward
 				{
-					if (handLeft.Z + 0.2 < prevHandLocationForewardsL.Z)
+					if (handLeft.Z + 0.2 < prevHandLocationForewardsL[id].Z)
 					{
-						penUp = false;
+						penUp[body.TrackingId] = false;
 						Console.WriteLine("left start again draw");
 					}
-					prevHandLocationBackwardsL = handLeft;
+					prevHandLocationBackwardsL[id] = handLeft;
 
 				}
-				if (handLeft.Z > prevHandLocationL.Z) // moving backwards
+				if (handLeft.Z > prevHandLocationL[id].Z) // moving backwards
 				{
 
-					if (handLeft.Z > prevHandLocationBackwardsL.Z + 0.2)
+					if (handLeft.Z > prevHandLocationBackwardsL[id].Z + 0.2)
 					{
-						penUp = true;
+						penUp[body.TrackingId] = true;
 						Console.WriteLine("left hand stop draw");
 					}
 
-					prevHandLocationForewardsL = handLeft;
+					prevHandLocationForewardsL[id] = handLeft;
 				}
 
 			}
-			prevHandLocationL = handLeft;
+			prevHandLocationL[id] = handLeft;
 		}
 
+
+
+
+
+
+
+
 		// old grip to take pen off 
-		public void DetectRightGripGestures(Body body, CameraSpacePoint handRight)
+	/*	public void DetectRightGripGestures(Body body, CameraSpacePoint handRight)
 		{
 			if (body.HandRightState != HandState.Closed)
 			{
@@ -105,7 +137,7 @@ namespace KinectV2InteractivePaint
 				{
 					if (handRight.Z + 0.1 < prevHandLocationR.Z)
 					{
-						penUp = false;
+						penUp[body.TrackingId] = false;
 						Console.WriteLine("right start again draw");
 					}
 				}
@@ -122,7 +154,7 @@ namespace KinectV2InteractivePaint
 				{
 					if (handRight.Z > prevHandLocationR.Z + 0.1)
 					{
-						penUp = true;
+						penUp[body.TrackingId] = true;
 						Console.WriteLine("right buffer closed hand stop draw");
 					}
 				}
@@ -139,7 +171,7 @@ namespace KinectV2InteractivePaint
 				{
 					if (handRight.Z > prevHandLocationR.Z + 0.1)
 					{
-						penUp = true;
+						penUp[body.TrackingId] = true;
 						Console.WriteLine("right closed hand stop draw");
 					}
 				}
@@ -149,7 +181,7 @@ namespace KinectV2InteractivePaint
 				}
 			}
 
-		}
+		}*/
 	}
 
 	

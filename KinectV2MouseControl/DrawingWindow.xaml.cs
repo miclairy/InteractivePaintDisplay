@@ -232,11 +232,10 @@ namespace KinectV2InteractivePaint
 					ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
 					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
 					//	Console.WriteLine(handLeft.X + " " + handLeft.Y);
-					
+
 					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
 					{
 						startStopGestures.DetectLeftGestures(body, handLeftPoint);
-
 						Point currentPoint = new Point(handLeft.X, handLeft.Y);
 					if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
 						currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
@@ -247,6 +246,7 @@ namespace KinectV2InteractivePaint
 					if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
 					{
 						startStopGestures.DetectRightGestures(body, handRightPoint);
+
 						Point currentPoint = new Point(handRight.X, handRight.Y);
 						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
 							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
@@ -424,7 +424,7 @@ namespace KinectV2InteractivePaint
 					previousPoints.Add(body, null);
 				}
 
-			if (!startStopGestures.penUp)
+			if (startStopGestures.penUp.ContainsKey(body) && !startStopGestures.penUp[body])
 			{
 				
 				Polyline currentDrawingSegment = previousPoints[body];
@@ -452,6 +452,7 @@ namespace KinectV2InteractivePaint
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X += penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
+					
 				}
 				if (engagement.Draw(body) == HandType.RIGHT)
 				{
@@ -466,6 +467,7 @@ namespace KinectV2InteractivePaint
 					rotateTransform.Angle = 0;
 					penImg.RenderTransform = rotateTransform;
 
+				cursors[body] = penImg;
 				drawArea.Children.Add(penImg);
 				int last = previousPoints[body].Points.Count - 1;
 				Point previousPoint = previousPoints[body].Points[last];
