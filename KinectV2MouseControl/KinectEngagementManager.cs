@@ -6,35 +6,37 @@ using Microsoft.Kinect.Toolkit.Input;
 
 namespace KinectV2InteractivePaint
 {
-	public class EngagementManager: IKinectEngagementManager
+	public class EngagementManager
 	{
 		private KinectSensor sensor;
 		private bool changed;
 		private Body[] bodies;
 		private BodyFrameReader bodyFrameReader;
 		private GestureController gestures = new GestureController();
-		private HandType WaveDetected;
-		private ulong trackingId;
-
+		private Dictionary<ulong, HandType> engagedHands = new Dictionary<ulong, HandType>();
+		// private ulong trackingId;
+		private CoordinateMapper coordinateMapper;
+		public List<ulong> engagedBodies = new List<ulong>();
 
 		public event EventHandler Engaged;
 		public event EventHandler Disengaged;
 
 		public EngagementManager(KinectSensor kinectSensor)
 		{
-			this.sensor = kinectSensor;
+			sensor = kinectSensor;
 			DefineGestures();
-			this.gestures.GestureRecognised += new EventHandler<GestureEventArgs>(this.Gestures_GestureRecognised);
-
+			gestures.GestureRecognised += new EventHandler<GestureEventArgs>(this.Gestures_GestureRecognised);
+			coordinateMapper = kinectSensor.CoordinateMapper;
+			StartManaging();
 		}
 
-		public IReadOnlyList<BodyHandPair> KinectManualEngagedHands
+		/*public IReadOnlyList<BodyHandPair> KinectManualEngagedHands
 		{
 			get
 			{
 				return (KinectCoreWindow.KinectManualEngagedHands);
 			}
-		}
+		}*/
 
 		public bool EngagedBodyHandPairsChanged()
 		{
@@ -43,7 +45,7 @@ namespace KinectV2InteractivePaint
 
 		public void StartManaging()
 		{
-			this.bodies = new Body[this.sensor.BodyFrameSource.BodyCount];
+			bodies = new Body[this.sensor.BodyFrameSource.BodyCount];
 			bodyFrameReader = sensor.BodyFrameSource.OpenReader();
 			bodyFrameReader.FrameArrived += bodyFrameReader_FrameArrived;
 		}
@@ -56,65 +58,78 @@ namespace KinectV2InteractivePaint
 				{
 					if (bodyFrame != null)
 					{
-						if (this.bodies == null)
+						if (bodies == null)
 						{
-							this.bodies = new Body[bodyFrame.BodyCount];
+							bodies = new Body[bodyFrame.BodyCount];
 						}
 
-						bodyFrame.GetAndRefreshBodyData(this.bodies);
+						bodyFrame.GetAndRefreshBodyData(bodies);
 					}
 				}
 			}
 			var currentlyEngagedHands = KinectCoreWindow.KinectManualEngagedHands;
 
-			foreach (Body body in this.bodies)
+			foreach (Body body in bodies)
 			{
 			
 				if (body != null && body.IsTracked)
 				{
-					this.gestures.UpdateAllGestures(body);
-					if (this.WaveDetected != HandType.NONE)
+					gestures.UpdateAllGestures(body);
+
+					CameraSpacePoint handLeftPoint = body.Joints[JointType.HandLeft].Position;
+					CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
+
+
+					if (engagedHands.ContainsKey(body.TrackingId) && engagedHands[body.TrackingId] != HandType.NONE)
 					{
-						this.EnsureEngaged(body.TrackingId);
+						EnsureEngaged(body.TrackingId);
 					}
-					break;
+
+					
 				}
 			}
 		}
 
-		public HandType Draw()
+		public HandType Draw(ulong TrackingId)
 		{
-			return this.WaveDetected;
+			if (engagedHands.ContainsKey(TrackingId))
+			{
+				return engagedHands[TrackingId];
+			}
+			return HandType.NONE;
 		}
 
 		private void EnsureEngaged(ulong trackingId)
 		{
 			
-			if (this.trackingId != trackingId)
+			if (!engagedBodies.Contains(trackingId))
 			{
-				this.trackingId = trackingId;
+				// this.trackingId = trackingId;
+				engagedBodies.Add(trackingId);
 
-				this.changed = true;
+				changed = true;
 
-				KinectCoreWindow.SetKinectOnePersonManualEngagement(
-				  new BodyHandPair(trackingId, this.WaveDetected));
+				//KinectCoreWindow.SetKinectOnePersonManualEngagement(
+				//  new BodyHandPair(trackingId, this.WaveDetected));
+				
 
-				this.Engaged?.Invoke(this, EventArgs.Empty);
+			//	Engaged?.Invoke(this, EventArgs.Empty);
+
 			} else
 			{
-				var currentlyEngagedHands = KinectCoreWindow.KinectManualEngagedHands;
-				foreach (BodyHandPair pair in currentlyEngagedHands)
+				//var currentlyEngagedHands = KinectCoreWindow.KinectManualEngagedHands;
+				/*foreach (KeyValuePair<ulong, HandType> pair in engagedHands)
 				{
-					if (pair.BodyTrackingId == trackingId && pair.HandType != WaveDetected)
+					if (pair.Key == trackingId && pair.Value != WaveDetected)
 					{
-						this.changed = true;
+						changed = true;*/
 
-						KinectCoreWindow.SetKinectOnePersonManualEngagement(
-						  new BodyHandPair(trackingId, this.WaveDetected));
+						// KinectCoreWindow.SetKinectOnePersonManualEngagement(
+						  // new BodyHandPair(trackingId, this.WaveDetected));
 
-						this.Engaged?.Invoke(this, EventArgs.Empty);
-					}
-				}
+						// Engaged?.Invoke(this, EventArgs.Empty);
+				//	}
+				// }
 			}
 		}
 
@@ -148,13 +163,28 @@ namespace KinectV2InteractivePaint
 		{
 			if (e.type == GestureType.waveLeft)
 			{
-				this.WaveDetected = HandType.LEFT;
+				if (engagedHands.ContainsKey(e.trackingId))
+				{
+					engagedHands[e.trackingId] = HandType.LEFT;
+				}
+				else
+				{
+					engagedHands.Add(e.trackingId, HandType.LEFT);
+				}
 				Console.WriteLine("Detected left wave");
 
 			}
 			if (e.type == GestureType.waveRight)
 			{
-				this.WaveDetected = HandType.RIGHT;
+				if (engagedHands.ContainsKey(e.trackingId))
+				{
+					engagedHands[e.trackingId] = HandType.RIGHT;
+				}
+				else
+				{
+					engagedHands.Add(e.trackingId, HandType.RIGHT);
+				}
+
 				Console.WriteLine("Detected right wave");
 				
 			}

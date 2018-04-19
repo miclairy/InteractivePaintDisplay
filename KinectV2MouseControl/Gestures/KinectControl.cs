@@ -111,8 +111,8 @@ namespace KinectV2InteractivePaint
 		public KinectControl()
         {
 			
-            // get Active Kinect Sensor
-       /*     sensor = KinectSensor.GetDefault();
+          /*  // get Active Kinect Sensor
+            sensor = KinectSensor.GetDefault();
 			this.coordinateMapper = this.sensor.CoordinateMapper;
 			// open the reader for the body frames
 			bodyFrameReader = sensor.BodyFrameSource.OpenReader();
@@ -132,8 +132,8 @@ namespace KinectV2InteractivePaint
 
 			// open the sensor
 			sensor.Open();
+			*/
 			
-		*/	
         }
 
 
@@ -178,7 +178,7 @@ namespace KinectV2InteractivePaint
         /// <param name="e"></param>
         void bodyFrameReader_FrameArrived(object sender, BodyFrameArrivedEventArgs e)
         {
-            bool dataReceived = false;
+          /*  bool dataReceived = false;
 
             using (BodyFrame bodyFrame = e.FrameReference.AcquireFrame())
             {
@@ -222,18 +222,18 @@ namespace KinectV2InteractivePaint
 							/* hand x calculated by this. don't use shoulder right as a reference cause the shoulder right
 							 * is usually behind the lift right hand, and the position would be inferred and unstable.
 							 * because the spine base is on the left of right hand, we plus 0.20f to make it closer to the right. */
-							float x = handRight.X - spineBase.X + 0.20f;
+				//			float x = handRight.X - spineBase.X + 0.20f;
 							/* hand y calculated by this. ss spine base is way lower than right hand, plus 0.50f to make it
 							 * higer */
-							float y = spineBase.Y - handRight.Y + 0.50f;
+			//				float y = spineBase.Y - handRight.Y + 0.50f;
 							// get current cursor position
-							Point curPos = MouseControl.GetCursorPosition();
+			//				Point curPos = MouseControl.GetCursorPosition();
 							// smoothing for using should be 0 - 0.95f. The way we smooth the cusor is: oldPos + (newPos - oldPos) * smoothValue
-							float smoothing = 1 - cursorSmoothing;
+			//				float smoothing = 1 - cursorSmoothing;
 							// set cursor position
 							//MouseControl.SetCursorPos((int)(curPos.X + (x * mouseSensitivity * screenWidth - curPos.X) * smoothing), (int)(curPos.Y + ((y + 0.25f) * mouseSensitivity * screenHeight - curPos.Y) * smoothing));
 
-							alreadyTrackedPos = true;
+				/*			alreadyTrackedPos = true;
 
 							if (body.HandRightState != HandState.Closed)
 							{
@@ -364,7 +364,7 @@ namespace KinectV2InteractivePaint
 								stoppedTime = 0;
 							}
 					*/
-						}
+				/*		}
 						else
 						{
 							wasLeftGrip = true;
@@ -376,11 +376,11 @@ namespace KinectV2InteractivePaint
                 }
 
 
-            }
+            }*/
         }
 
 
-		public HandType Draw()
+	/*	public HandType Draw()
 		{
 			return this.WaveDetected;
 		}
@@ -452,7 +452,7 @@ namespace KinectV2InteractivePaint
 			startDrawingSegments[1] = startDrawingSegment2;
 			//this.gestures.AddGesture(GestureType.startDrawing, startDrawingSegments);
 
-		}
+		}*/
 
 		public void Close()
         {

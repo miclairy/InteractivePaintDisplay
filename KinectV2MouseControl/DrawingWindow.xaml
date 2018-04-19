@@ -5,18 +5,16 @@
 		Title="Draw" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
         WindowState="Maximized">
 	
-	<k:KinectRegion x:Name="kinectRegion" Loaded="kinectRegion_Loaded">
+
 		<ContentControl x:Name="inputRegion">
-			<DockPanel>
-				<Canvas x:Name="drawArea" MouseDown="drawArea_MouseDown" RenderTransformOrigin="0.5,0.5" Background="White" MouseUp="drawArea_MouseUp" >
+				<Canvas x:Name="drawArea" MouseDown="drawArea_MouseDown" RenderTransformOrigin="0.5,0.5" Background="Red" MouseUp="drawArea_MouseUp" >
 					<DockPanel x:Name="userVideo">
-						<Viewbox Canvas.Left="189" Canvas.Top="120" >
+						<Viewbox >
 							<Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
 						</Viewbox>
 					</DockPanel>
 				</Canvas>
-			</DockPanel>
 		</ContentControl>
-	</k:KinectRegion>
+
 	
 </Window>
