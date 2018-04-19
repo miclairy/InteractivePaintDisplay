@@ -67,7 +67,7 @@ namespace KinectV2InteractivePaint
 					}
 				}
 			}
-			var currentlyEngagedHands = KinectCoreWindow.KinectManualEngagedHands;
+		//	var currentlyEngagedHands = KinectCoreWindow.KinectManualEngagedHands;
 
 			foreach (Body body in bodies)
 			{
@@ -75,10 +75,6 @@ namespace KinectV2InteractivePaint
 				if (body != null && body.IsTracked)
 				{
 					gestures.UpdateAllGestures(body);
-
-					CameraSpacePoint handLeftPoint = body.Joints[JointType.HandLeft].Position;
-					CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
-
 
 					if (engagedHands.ContainsKey(body.TrackingId) && engagedHands[body.TrackingId] != HandType.NONE)
 					{
@@ -136,26 +132,24 @@ namespace KinectV2InteractivePaint
 		private void DefineGestures()
 		{
 
-			IRelativeGestureSegment[] waveLeftSegments = new IRelativeGestureSegment[6];
+			IRelativeGestureSegment[] waveLeftSegments = new IRelativeGestureSegment[4];
 			WaveLeftSegment1 waveLeftSegment1 = new WaveLeftSegment1();
 			WaveLeftSegment2 waveLeftSegment2 = new WaveLeftSegment2();
 			waveLeftSegments[0] = waveLeftSegment1;
 			waveLeftSegments[1] = waveLeftSegment2;
 			waveLeftSegments[2] = waveLeftSegment1;
 			waveLeftSegments[3] = waveLeftSegment2;
-			waveLeftSegments[4] = waveLeftSegment1;
-			waveLeftSegments[5] = waveLeftSegment2;
+
 			this.gestures.AddGesture(GestureType.waveLeft, waveLeftSegments);
 
-			IRelativeGestureSegment[] waveRightSegments = new IRelativeGestureSegment[6];
+			IRelativeGestureSegment[] waveRightSegments = new IRelativeGestureSegment[4];
 			WaveRightSegment1 waveRightSegment1 = new WaveRightSegment1();
 			WaveRightSegment2 waveRightSegment2 = new WaveRightSegment2();
 			waveRightSegments[0] = waveRightSegment1;
 			waveRightSegments[1] = waveRightSegment2;
 			waveRightSegments[2] = waveRightSegment1;
 			waveRightSegments[3] = waveRightSegment2;
-			waveRightSegments[4] = waveRightSegment1;
-			waveRightSegments[5] = waveRightSegment2;
+
 			this.gestures.AddGesture(GestureType.waveRight, waveRightSegments);
 		}
 

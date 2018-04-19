@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Kinect;
 
 namespace KinectV2InteractivePaint
@@ -7,10 +8,10 @@ namespace KinectV2InteractivePaint
 	public class Gesture
 	{
 		private IRelativeGestureSegment[] gestureParts;
-		private int currentGesturePart = 0;
-		private int framePauseCount = 10; //pauses for ten frames when guesture is paused
-		private int frameCount = 0;
-		private bool paused = false;
+		private Dictionary<ulong, int> currentGesturePart = new Dictionary<ulong, int>();
+		private Dictionary<ulong, int> framePauseCount = new Dictionary<ulong, int>(); //pauses for ten frames when guesture is paused
+		private Dictionary<ulong, int> frameCount = new Dictionary<ulong, int>();
+		private Dictionary<ulong, bool> paused = new Dictionary<ulong, bool>();
 		private GestureType type;
 
 		public Gesture(GestureType type, IRelativeGestureSegment[] gestureParts)
@@ -24,55 +25,70 @@ namespace KinectV2InteractivePaint
 
 		public void UpdateGesture(Body data)
 		{
-			if (this.paused)
+			ulong id = data.TrackingId;
+			if (!currentGesturePart.ContainsKey(data.TrackingId))
 			{
-				if (this.frameCount >= this.framePauseCount)
+				currentGesturePart.Add(data.TrackingId, 0);
+			}
+			if (!frameCount.ContainsKey(id)) {
+				frameCount.Add(data.TrackingId, 0);
+			}
+			if (!framePauseCount.ContainsKey(id)) {
+				framePauseCount.Add(data.TrackingId, 10);
+			}
+			if (!paused.ContainsKey(id)) {
+				paused.Add(data.TrackingId, false);
+			}
+			
+			if (this.paused[id])
+			{
+				if (this.frameCount[id] >= this.framePauseCount[id])
 				{
-					this.paused = false;
+					this.paused[id] = false;
 				}
-				this.frameCount++;
+				this.frameCount[id]++;
 			}
 
-			GestureResult result = this.gestureParts[this.currentGesturePart].CheckGesture(data);
+			GestureResult result = this.gestureParts[this.currentGesturePart[data.TrackingId]].CheckGesture(data);
 			if (result == GestureResult.Suceed)
 			{
 
-				if (this.currentGesturePart + 1 < this.gestureParts.Length)
+				if (this.currentGesturePart[data.TrackingId] + 1 < this.gestureParts.Length)
 				{
-					this.currentGesturePart++;
-					this.ResetPause();
+					this.currentGesturePart[data.TrackingId] ++;
+					this.ResetPause(id);
 				} else
 				{
 					if (this.GestureRecognised != null)
 					{
-						this.GestureRecognised(this, new GestureEventArgs(this.gestureParts[this.currentGesturePart].GetGestureType(), data.TrackingId));
-						this.Reset();
+						this.GestureRecognised(this, new GestureEventArgs(this.gestureParts[this.currentGesturePart[data.TrackingId]].GetGestureType(), data.TrackingId));
+						this.Reset(id);
 					}
 				}
-			} else if (result == GestureResult.Fail || this.frameCount == 50)
+			} else if (result == GestureResult.Fail || this.frameCount[id] == 50)
 			{
-				this.Reset();
+				this.Reset(id);
 			} else
 			{
-				this.frameCount = 0;
-				this.framePauseCount = 5;
-				this.paused = true;
+				this.frameCount[id] = 0;
+				this.framePauseCount[id] = 5;
+				this.paused[id] = true;
 			}
 		}
 
-		private void ResetPause()
+		private void ResetPause(ulong id)
 		{
-			this.frameCount = 0;
-			this.framePauseCount = 10;
-			this.paused = true;
+			this.frameCount[id] = 0;
+			this.framePauseCount[id] = 10;
+			this.paused[id] = true;
 		}
 
-		public void Reset()
+		public void Reset(ulong id)
 		{
-			this.currentGesturePart = 0;
-			this.frameCount = 0;
-			this.framePauseCount = 5;
-			this.paused = true;
+			this.currentGesturePart = new Dictionary<ulong, int>();
+			this.frameCount[id] = 0;
+			this.framePauseCount[id] = 5;
+			this.paused[id] = true;
 		}
 	}
 }

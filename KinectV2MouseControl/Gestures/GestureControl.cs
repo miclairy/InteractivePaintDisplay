@@ -42,7 +42,7 @@ namespace KinectV2InteractivePaint
 
 			foreach (Gesture gesture in this.gestures)
 			{
-				gesture.Reset();
+				gesture.Reset(e.trackingId);
 			}
 		}
 		
