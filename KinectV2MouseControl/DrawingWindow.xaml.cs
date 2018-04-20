@@ -54,15 +54,9 @@ namespace KinectV2InteractivePaint
 			Stroke = Brushes.Yellow
 		};
 		private Dictionary<ulong, Brush> colours = new Dictionary<ulong, Brush>();
-		private Ellipse colourSwatch = new Ellipse()
-		{
-			HorizontalAlignment = HorizontalAlignment.Left,
-			Height = 35,
-			Width = 35,
-			Margin = new Thickness(5),
-			Stroke = Brushes.Black,
-			StrokeThickness = 3
-		};
+		
+		private Dictionary<ulong, Ellipse> colourSwatches = new Dictionary<ulong, Ellipse>();
+
 
 		public DrawingWindow()
         {
@@ -243,47 +237,63 @@ namespace KinectV2InteractivePaint
 					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
 					//		Console.WriteLine(handLeftPoint.X + " " + handRightPoint.X);
 					double angle = ColourGestures.DetectColourGestures(handLeftPoint, handRightPoint);
-					drawArea.Children.Remove(colourSwatch);
+					Ellipse colourSwatch = new Ellipse()
+					{
+						HorizontalAlignment = HorizontalAlignment.Left,
+						Height = 35,
+						Width = 35,
+						Margin = new Thickness(5),
+						Stroke = Brushes.Black,
+						StrokeThickness = 3
+					};
+					if (!colourSwatches.ContainsKey(body.TrackingId)){
+						colourSwatches.Add(body.TrackingId, colourSwatch);
+					}
+					drawArea.Children.Remove(colourSwatches[body.TrackingId]);
 					if (angle > -1)
 					{
-						startStopGestures.penUp[body.TrackingId] = true;
+						//	startStopGestures.penUp[body.TrackingId] = true;
 						Color newColour = ColourGestures.HsvToRgb(angle, 1, 1);
 						colours[body.TrackingId] = new SolidColorBrush(newColour);
-						colourSwatch.Fill = colours[body.TrackingId];
-						drawArea.Children.Add(colourSwatch);
-						
-						
-					}
+						colourSwatches[body.TrackingId].Fill = colours[body.TrackingId];
+						drawArea.Children.Add(colourSwatches[body.TrackingId]);
+						startStopGestures.penUp[body.TrackingId] = false;
 
-					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
-					{
-						startStopGestures.DetectLeftGestures(body, handLeftPoint);
-						Point currentPoint = new Point(handLeft.X, handLeft.Y);
-						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
-							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
+					}
+					
+
+						if (engagement.Draw(body.TrackingId) == HandType.LEFT)
 						{
-							Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
+							startStopGestures.DetectLeftGestures(body, handLeftPoint);
+							startStopGestures.DetectStopGesture(body, handLeftPoint, handRightPoint);
+							Point currentPoint = new Point(handLeft.X, handLeft.Y);
+							if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+								currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
+							{
+								Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
 
-							Canvas.SetTop(colourSwatch, handLeft.Y - 70);
-							Canvas.SetLeft(colourSwatch, handLeft.X + 10);
+								Canvas.SetTop(colourSwatches[body.TrackingId], handLeft.Y - 70);
+								Canvas.SetLeft(colourSwatches[body.TrackingId], handLeft.X + 10);
+							}
+
 						}
-
-					}
-					if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
-					{
-						startStopGestures.DetectRightGestures(body, handRightPoint);
+						if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
+						{
+							startStopGestures.DetectRightGestures(body, handRightPoint);
+							startStopGestures.DetectStopGesture(body, handRightPoint, handLeftPoint );
 
 						Point currentPoint = new Point(handRight.X, handRight.Y);
-						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
-							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
-						{
-							Draw(currentPoint, body.TrackingId, handRightPoint.Z);
-						
+							if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+								currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
+							{
+								Draw(currentPoint, body.TrackingId, handRightPoint.Z);
 
-							Canvas.SetTop(colourSwatch, handRight.Y - 70);
-							Canvas.SetLeft(colourSwatch, handRight.X - 10);
+
+								Canvas.SetTop(colourSwatches[body.TrackingId], handRight.Y - 70);
+								Canvas.SetLeft(colourSwatches[body.TrackingId], handRight.X - 10);
+							}
 						}
-					}
+					
 					
 				}
 
@@ -556,7 +566,7 @@ namespace KinectV2InteractivePaint
 					currentPoint.X += penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
 					rotateTransform.Angle = -25;
-					drawArea.Children.Add(penImg);
+					
 				}
 				if (engagement.Draw(body) == HandType.RIGHT)
 				{
@@ -568,13 +578,21 @@ namespace KinectV2InteractivePaint
 					currentPoint.X -= penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
 					rotateTransform.Angle = 25;
-					drawArea.Children.Add(penImg);
+					
 				}
+
+				cursors[body] = penImg;
+				penImg.RenderTransform = rotateTransform;
+
+				drawArea.Children.Add(penImg);
+
 				Polyline currentDrawingSegment = previousPoints[body];
 
 				if (currentDrawingSegment.Points.Count > 1)
 				{
 					drawingSegments.Add(currentDrawingSegment);
+					previousPoints[body] = null;
+
 					DockPanel screenDisplay = userVideo;
 					drawArea.Children.Clear();
 					drawArea.Children.Add(screenDisplay);
@@ -586,7 +604,15 @@ namespace KinectV2InteractivePaint
 					{
 						drawArea.Children.Add(poly);
 					}
-					foreach (Point p in currentDrawingSegment.Points)
+
+					foreach (KeyValuePair<ulong, Polyline> drawing in previousPoints)
+					{
+						if (drawing.Value != null)
+						{
+							drawArea.Children.Add(drawing.Value);
+						}
+					}
+						foreach (Point p in currentDrawingSegment.Points)
 					{
 						int drawingSegmentFace = this.PointOnFace(p);
 						if (drawingSegmentFace != -1)

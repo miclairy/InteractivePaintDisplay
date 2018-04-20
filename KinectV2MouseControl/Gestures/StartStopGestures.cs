@@ -119,7 +119,7 @@ namespace KinectV2InteractivePaint
 			int g = Clamp((int)(G * 255.0));
 			int b = Clamp((int)(B * 255.0));
 
-			Console.WriteLine(h + " =  " + r + " " + b + " " + g);
+		//	Console.WriteLine(h + " =  " + r + " " + b + " " + g);
 			
 			return Color.FromRgb(Convert.ToByte(r), Convert.ToByte(g), Convert.ToByte(b));
 		}
@@ -164,6 +164,14 @@ namespace KinectV2InteractivePaint
 
 		public StartStopGestures()
 		{
+		}
+
+		public void DetectStopGesture(Body body, CameraSpacePoint engagedHand, CameraSpacePoint otherHand)
+		{
+			if (Math.Abs(engagedHand.X - otherHand.X) <= 0.2 && Math.Abs(engagedHand.Y - otherHand.Y) <= 0.2)
+			{
+				penUp[body.TrackingId] = true;
+			}
 		}
 
 		public void DetectRightGestures(Body body, CameraSpacePoint handRight)
