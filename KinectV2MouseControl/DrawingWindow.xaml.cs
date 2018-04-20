@@ -114,7 +114,7 @@ namespace KinectV2InteractivePaint
 			this.DataContext = this;
 
 			// KinectRegion.SetKinectRegion(this, kinectRegion);
-			engagement = new EngagementManager(kinectSensor);
+			// engagement = new EngagementManager(kinectSensor);
 
 			// App app = ((App)Application.Current);
 			// app.KinectRegion = kinectRegion;
@@ -145,7 +145,7 @@ namespace KinectV2InteractivePaint
 
 			ImageBrush brush = new ImageBrush();
 			brush.ImageSource = colorBitmap;
-			brush.Stretch = Stretch.UniformToFill;
+			brush.Stretch = Stretch.Uniform;
 			drawArea.Background = brush;
 
 		}
@@ -231,7 +231,6 @@ namespace KinectV2InteractivePaint
 					CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
 					// Console.WriteLine(body.HandLeftConfidence);
 
-					
 
 
 
@@ -242,17 +241,19 @@ namespace KinectV2InteractivePaint
 					handLeft.Y = percentY * (float)Height;*/
 
 
-					float scaleFactor = (float) Width / displayWidth;
+					float scaleFactorX = (float) Width / displayWidth;
+					float scaleFactorY = (float)Height / displayHeight;
+
 					int origin = displayWidth / 2;
-					handLeft.X = scaleFactor * (handLeft.X - 0);
-					handLeft.Y = scaleFactor * (handLeft.Y - 0);
-					Console.WriteLine(handLeft.X +" " + coordinateMapper.MapCameraPointToColorSpace(handLeftPoint).X);
+					handLeft.X = scaleFactorX * (handLeft.X - 0);
+					handLeft.Y = scaleFactorY * (handLeft.Y - 0);
+					Console.WriteLine(handLeft.X + " " + coordinateMapper.MapCameraPointToColorSpace(handLeftPoint).X + " " + Width + " " + displayWidth);
 					
 
 
 					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
-					handRight.X = scaleFactor * (handRight.X - 0);
-					handRight.Y = scaleFactor * (handRight.Y - 0);
+					//handRight.X = scaleFactor * (handRight.X - 0);
+					//handRight.Y = scaleFactor * (handRight.Y - 0);
 					//	Console.WriteLine(handLeft.X + " " + handLeft.Y);
 
 					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
