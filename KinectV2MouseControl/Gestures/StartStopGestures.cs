@@ -172,6 +172,7 @@ namespace KinectV2InteractivePaint
 			{
 				penUp[body.TrackingId] = true;
 			}
+
 		}
 
 		public void DetectRightGestures(Body body, CameraSpacePoint handRight)

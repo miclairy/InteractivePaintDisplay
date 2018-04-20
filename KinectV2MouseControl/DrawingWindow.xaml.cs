@@ -262,39 +262,49 @@ namespace KinectV2InteractivePaint
 					}
 					
 
-						if (engagement.Draw(body.TrackingId) == HandType.LEFT)
+					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
+					{
+						startStopGestures.DetectLeftGestures(body, handLeftPoint);
+						startStopGestures.DetectStopGesture(body, handLeftPoint, handRightPoint);
+						Point currentPoint = new Point(handLeft.X, handLeft.Y);
+						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
 						{
-							startStopGestures.DetectLeftGestures(body, handLeftPoint);
-							startStopGestures.DetectStopGesture(body, handLeftPoint, handRightPoint);
-							Point currentPoint = new Point(handLeft.X, handLeft.Y);
-							if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
-								currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
-							{
-								Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
+							Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
 
-								Canvas.SetTop(colourSwatches[body.TrackingId], handLeft.Y - 70);
-								Canvas.SetLeft(colourSwatches[body.TrackingId], handLeft.X + 10);
-							}
-
+							Canvas.SetTop(colourSwatches[body.TrackingId], handLeft.Y - 70);
+							Canvas.SetLeft(colourSwatches[body.TrackingId], handLeft.X + 10);
 						}
-						if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
+
+					}
+					if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
+					{
+						startStopGestures.DetectRightGestures(body, handRightPoint);
+						startStopGestures.DetectStopGesture(body, handRightPoint, handLeftPoint );
+
+					Point currentPoint = new Point(handRight.X, handRight.Y);
+						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
 						{
-							startStopGestures.DetectRightGestures(body, handRightPoint);
-							startStopGestures.DetectStopGesture(body, handRightPoint, handLeftPoint );
-
-						Point currentPoint = new Point(handRight.X, handRight.Y);
-							if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
-								currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
-							{
-								Draw(currentPoint, body.TrackingId, handRightPoint.Z);
+							Draw(currentPoint, body.TrackingId, handRightPoint.Z);
 
 
-								Canvas.SetTop(colourSwatches[body.TrackingId], handRight.Y - 70);
-								Canvas.SetLeft(colourSwatches[body.TrackingId], handRight.X - 10);
-							}
+							Canvas.SetTop(colourSwatches[body.TrackingId], handRight.Y - 70);
+							Canvas.SetLeft(colourSwatches[body.TrackingId], handRight.X - 10);
 						}
+					}
 					
 					
+				} else if (body.IsTracked)
+				{
+					if (cursors.ContainsKey(body.TrackingId))
+					{
+						cursors.Remove(body.TrackingId);
+					}
+					if (colourSwatches.ContainsKey(body.TrackingId))
+					{
+						colourSwatches.Remove(body.TrackingId);
+					}
 				}
 
 				if (this.faceFrameSources[i].IsTrackingIdValid)
@@ -450,6 +460,7 @@ namespace KinectV2InteractivePaint
 
 		private void Draw(Point currentPoint, ulong body, float handPointZ)
 		{
+			
 			Image penImg = null;
 			double scaling = 4 * handPointZ;
 			if (cursors.ContainsKey(body))
@@ -483,6 +494,12 @@ namespace KinectV2InteractivePaint
 
 				}
 				previousPoints[body].Stroke = colours[body];
+				
+				int last = previousPoints[body].Points.Count - 1;
+				Point previousPoint = previousPoints[body].Points[last];
+				double smoothing = 1 - 0.5;
+				currentPoint.X = previousPoint.X + (currentPoint.X - previousPoint.X) * smoothing;
+				currentPoint.Y = previousPoint.Y + (currentPoint.Y - previousPoint.Y) * smoothing;
 
 				if (drawArea.Children.Contains(penImg))
 				{
@@ -514,8 +531,7 @@ namespace KinectV2InteractivePaint
 
 				cursors[body] = penImg;
 				drawArea.Children.Add(penImg);
-				int last = previousPoints[body].Points.Count - 1;
-				Point previousPoint = previousPoints[body].Points[last];
+
 
 				if (previousPoint != null)
 				{

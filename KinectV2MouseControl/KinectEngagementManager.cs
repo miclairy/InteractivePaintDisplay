@@ -79,6 +79,7 @@ namespace KinectV2InteractivePaint
 					if (engagedHands.ContainsKey(body.TrackingId) && engagedHands[body.TrackingId] != HandType.NONE)
 					{
 						EnsureEngaged(body.TrackingId);
+						
 					}
 
 					
@@ -151,6 +152,18 @@ namespace KinectV2InteractivePaint
 			waveRightSegments[3] = waveRightSegment2;
 
 			this.gestures.AddGesture(GestureType.waveRight, waveRightSegments);
+
+			IRelativeGestureSegment[] dropGestureSegmentsLeft = new IRelativeGestureSegment[2];
+			StopDrawingSegmentLeft dropSegmentLeft = new StopDrawingSegmentLeft();
+			dropGestureSegmentsLeft[0] = dropSegmentLeft;
+			dropGestureSegmentsLeft[1] = dropSegmentLeft;
+			this.gestures.AddGesture(GestureType.stopDrawing, dropGestureSegmentsLeft);
+
+			IRelativeGestureSegment[] dropGestureSegmentsRight = new IRelativeGestureSegment[2];
+			StopDrawingSegmentRight dropSegmentRight = new StopDrawingSegmentRight();
+			dropGestureSegmentsRight[0] = dropSegmentRight;
+			dropGestureSegmentsRight[1] = dropSegmentRight;
+			this.gestures.AddGesture(GestureType.stopDrawing, dropGestureSegmentsRight);
 		}
 
 		private void Gestures_GestureRecognised(object sender, GestureEventArgs e)
@@ -181,6 +194,14 @@ namespace KinectV2InteractivePaint
 
 				Console.WriteLine("Detected right wave");
 				
+			}
+			if (e.type == GestureType.stopDrawing)
+			{
+				if (engagedHands.ContainsKey(e.trackingId))
+				{
+					engagedHands.Remove(e.trackingId);
+				}
+				Console.WriteLine("Detected drop");
 			}
 		}
 
