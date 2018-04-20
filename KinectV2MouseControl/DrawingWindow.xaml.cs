@@ -231,7 +231,7 @@ namespace KinectV2InteractivePaint
 								
 					ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
 					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
-					//	Console.WriteLine(handLeft.X + " " + handLeft.Y);
+					Console.WriteLine(handLeftPoint.Z);
 
 					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
 					{
@@ -240,7 +240,7 @@ namespace KinectV2InteractivePaint
 					if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
 						currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
 					{
-						Draw(currentPoint, body.TrackingId);
+						Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
 					}
 					}
 					if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
@@ -251,7 +251,7 @@ namespace KinectV2InteractivePaint
 						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
 							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
 						{
-							Draw(currentPoint, body.TrackingId);
+							Draw(currentPoint, body.TrackingId, handRightPoint.Z);
 						}
 					}
 					
@@ -408,9 +408,10 @@ namespace KinectV2InteractivePaint
 			} 
         }
 
-		private void Draw(Point currentPoint, ulong body)
+		private void Draw(Point currentPoint, ulong body, float handPointZ)
 		{
 			Image penImg = null;
+			double scaling = 4 * handPointZ;
 			if (cursors.ContainsKey(body))
 			{
 				penImg = cursors[body];
@@ -445,20 +446,20 @@ namespace KinectV2InteractivePaint
 				}
 				if (engagement.Draw(body) == HandType.LEFT)
 				{
+					
 					penImg.Source = penLeftClipArt;
-					penImg.Width = penLeftClipArt.Width / 4;
-					penImg.Height = penLeftClipArt.Height / 4;
+					penImg.Width = penLeftClipArt.Width / scaling;
+					penImg.Height = penLeftClipArt.Height / scaling;
 					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X += penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
-					
 				}
 				if (engagement.Draw(body) == HandType.RIGHT)
 				{
 					penImg.Source = penRightClipArt;
-					penImg.Width = penRightClipArt.Width / 4;
-					penImg.Height = penRightClipArt.Height / 4;
+					penImg.Width = penRightClipArt.Width / scaling;
+					penImg.Height = penRightClipArt.Height / scaling;
 					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X -= penImg.Width / 2;
@@ -513,8 +514,8 @@ namespace KinectV2InteractivePaint
 				if (engagement.Draw(body) == HandType.LEFT)
 				{
 					penImg.Source = penLeftClipArt;
-					penImg.Width = penLeftClipArt.Width / 4;
-					penImg.Height = penLeftClipArt.Height / 4;
+					penImg.Width = penLeftClipArt.Width / scaling;
+					penImg.Height = penLeftClipArt.Height / scaling;
 					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X += penImg.Width / 2;
@@ -525,8 +526,8 @@ namespace KinectV2InteractivePaint
 				if (engagement.Draw(body) == HandType.RIGHT)
 				{
 					penImg.Source = penRightClipArt;
-					penImg.Width = penRightClipArt.Width / 4;
-					penImg.Height = penRightClipArt.Height / 4;
+					penImg.Width = penRightClipArt.Width / scaling;
+					penImg.Height = penRightClipArt.Height / scaling;
 					Canvas.SetLeft(penImg, currentPoint.X - penImg.Width / 2);
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X -= penImg.Width / 2;
