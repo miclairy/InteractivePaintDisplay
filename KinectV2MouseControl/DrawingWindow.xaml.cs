@@ -53,6 +53,16 @@ namespace KinectV2InteractivePaint
 			StrokeThickness = 5,
 			Stroke = Brushes.Yellow
 		};
+		private Dictionary<ulong, Brush> colours = new Dictionary<ulong, Brush>();
+		private Ellipse colourSwatch = new Ellipse()
+		{
+			HorizontalAlignment = HorizontalAlignment.Left,
+			Height = 35,
+			Width = 35,
+			Margin = new Thickness(5),
+			Stroke = Brushes.Black,
+			StrokeThickness = 3
+		};
 
 		public DrawingWindow()
         {
@@ -231,17 +241,33 @@ namespace KinectV2InteractivePaint
 								
 					ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
 					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
-					Console.WriteLine(handLeftPoint.Z);
+					//		Console.WriteLine(handLeftPoint.X + " " + handRightPoint.X);
+					double angle = ColourGestures.DetectColourGestures(handLeftPoint, handRightPoint);
+					drawArea.Children.Remove(colourSwatch);
+					if (angle > -1)
+					{
+						startStopGestures.penUp[body.TrackingId] = true;
+						Color newColour = ColourGestures.HsvToRgb(angle, 1, 1);
+						colours[body.TrackingId] = new SolidColorBrush(newColour);
+						colourSwatch.Fill = colours[body.TrackingId];
+						drawArea.Children.Add(colourSwatch);
+						
+						
+					}
 
 					if (engagement.Draw(body.TrackingId) == HandType.LEFT)
 					{
 						startStopGestures.DetectLeftGestures(body, handLeftPoint);
 						Point currentPoint = new Point(handLeft.X, handLeft.Y);
-					if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
-						currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
-					{
-						Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
-					}
+						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
+							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
+						{
+							Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
+
+							Canvas.SetTop(colourSwatch, handLeft.Y - 70);
+							Canvas.SetLeft(colourSwatch, handLeft.X + 10);
+						}
+
 					}
 					if (engagement.Draw(body.TrackingId) == HandType.RIGHT)
 					{
@@ -252,6 +278,10 @@ namespace KinectV2InteractivePaint
 							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
 						{
 							Draw(currentPoint, body.TrackingId, handRightPoint.Z);
+						
+
+							Canvas.SetTop(colourSwatch, handRight.Y - 70);
+							Canvas.SetLeft(colourSwatch, handRight.X - 10);
 						}
 					}
 					
@@ -424,6 +454,10 @@ namespace KinectV2InteractivePaint
 				{
 					previousPoints.Add(body, null);
 				}
+			if (!colours.ContainsKey(body))
+			{
+				colours.Add(body, Brushes.DeepPink);
+			}
 
 			if (startStopGestures.penUp.ContainsKey(body) && !startStopGestures.penUp[body])
 			{
@@ -432,13 +466,13 @@ namespace KinectV2InteractivePaint
 				if (currentDrawingSegment == null)
 				{
 					currentDrawingSegment = new Polyline();
-					currentDrawingSegment.Stroke = Brushes.MediumPurple;
+					currentDrawingSegment.Stroke = colours[body];
 					currentDrawingSegment.StrokeThickness = 3;
 					previousPoints[body] = currentDrawingSegment;
 					previousPoints[body].Points.Add(currentPoint);
 
 				}
-
+				previousPoints[body].Stroke = colours[body];
 
 				if (drawArea.Children.Contains(penImg))
 				{
@@ -479,7 +513,7 @@ namespace KinectV2InteractivePaint
 				//	currentDrawingSegment.Points.Add(currentPoint);
 					
 					Line line = new Line();
-					line.Stroke = Brushes.DeepPink;
+					line.Stroke = colours[body];
 					line.X1 = previousPoint.X;
 					line.X2 = currentPoint.X;
 					line.Y1 = previousPoint.Y;
@@ -496,7 +530,7 @@ namespace KinectV2InteractivePaint
 			{
 				if (previousPoints[body] == null) {
 					Polyline drawingSegment = new Polyline();
-					drawingSegment.Stroke = Brushes.DeepPink;
+					drawingSegment.Stroke = colours[body];
 					drawingSegment.StrokeThickness = 3;
 					previousPoints[body] = drawingSegment;
 					previousPoints[body].Points.Add(currentPoint);
@@ -504,6 +538,7 @@ namespace KinectV2InteractivePaint
 				}
 				int last = previousPoints[body].Points.Count - 1;
 				Point previousPoint = previousPoints[body].Points[last];
+				previousPoints[body].Stroke = colours[body];
 
 				previousPoints[body].Points[last] = currentPoint;
 				if (drawArea.Children.Contains(penImg))
