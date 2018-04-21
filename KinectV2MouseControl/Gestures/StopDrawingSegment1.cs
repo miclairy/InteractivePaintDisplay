@@ -30,7 +30,7 @@ namespace KinectV2InteractivePaint
 
 		public GestureType GetGestureType()
 		{
-			return GestureType.stopDrawing;
+			return GestureType.stopDrawingLeft;
 		}
 	}
 
@@ -48,7 +48,9 @@ namespace KinectV2InteractivePaint
 			double elbowZ = skeleton.Joints[JointType.ElbowRight].Position.Z;
 
 			double angle = Math.Atan2(handZ - elbowZ, handY - elbowZ);
-			if (angle + Math.PI * 2 >= 130)
+			// Console.WriteLine(handY + " " + elbowY  +" "+ handZ + " " + elbowZ + " "+ angle);
+
+			if (handY + 0.2 < elbowY)
 			{
 				return GestureResult.Suceed;
 			}
@@ -58,7 +60,7 @@ namespace KinectV2InteractivePaint
 
 		public GestureType GetGestureType()
 		{
-			return GestureType.stopDrawing;
+			return GestureType.stopDrawingRight;
 		}
 	}
 

@@ -133,6 +133,9 @@
   <ItemGroup>
     <Resource Include="penDownRight.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="interactivePaintInstructions.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(KINECTSDK20_DIR)Redist\Face\x64\NuiDatabase" "$(TargetDir)\NuiDatabase" /S /R /Y /I</PostBuildEvent>

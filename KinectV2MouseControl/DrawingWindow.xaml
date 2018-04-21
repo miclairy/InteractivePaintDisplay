@@ -4,17 +4,36 @@
 		xmlns:k="http://schemas.microsoft.com/kinect/2014"
 		Title="Draw" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
         WindowState="Maximized">
-	
 
-		<ContentControl x:Name="inputRegion">
-				<Canvas x:Name="drawArea" MouseDown="drawArea_MouseDown" RenderTransformOrigin="0.5,0.5" Background="Red" MouseUp="drawArea_MouseUp" >
-					<DockPanel x:Name="userVideo">
-						<Viewbox >
-							<Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
-						</Viewbox>
-					</DockPanel>
-				</Canvas>
-		</ContentControl>
 
-	
+	<ContentControl x:Name="inputRegion">
+		<Canvas x:Name="drawArea" MouseDown="drawArea_MouseDown" RenderTransformOrigin="0.5,0.5" Background="Red" MouseUp="drawArea_MouseUp" >
+
+			<DockPanel x:Name="userVideo">
+				<Viewbox >
+					<Image Source="{Binding ImageSource}" Stretch="UniformToFill" />
+				</Viewbox>
+			</DockPanel>
+			<DockPanel  x:Name="enticement" Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Canvas}}}">
+				<TextBlock Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DockPanel}}}" TextWrapping="Wrap" Text="Wave to start Drawing" Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DockPanel}}}" FontSize="36" FontWeight="Bold" TextAlignment="Center" Foreground="White" DockPanel.Dock="Top" HorizontalAlignment="Center" VerticalAlignment="Center">
+					<TextBlock.Effect>
+						<DropShadowEffect
+					  ShadowDepth="4"
+					  Direction="330"
+					  Color="Black"
+					  Opacity="0.75"
+					 BlurRadius="4"/>
+					</TextBlock.Effect>
+				</TextBlock>
+			</DockPanel>
+
+			<Viewbox  x:Name="instructions" Height="338" Canvas.Left="19" Canvas.Top="73" Width="373">
+				<Image Height="160" Width="177" Source="interactivePaintInstructions.jpg"/>
+
+			</Viewbox>
+
+		</Canvas>
+	</ContentControl>
+
+
 </Window>

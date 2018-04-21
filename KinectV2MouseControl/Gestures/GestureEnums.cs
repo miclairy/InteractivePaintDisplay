@@ -10,7 +10,8 @@ namespace KinectV2InteractivePaint
 	public enum GestureType
 	{
 		waveLeft, waveRight,
-		stopDrawing,
+		stopDrawingLeft,
+		stopDrawingRight,
 		startDrawing
 	}
 

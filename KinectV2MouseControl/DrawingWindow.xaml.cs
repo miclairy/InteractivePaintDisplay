@@ -35,7 +35,7 @@ namespace KinectV2InteractivePaint
 		private FaceFrameSource[] faceFrameSources = null;
 		private FaceFrameReader[] faceFrameReaders = null;
 		private FaceFrameResult[] faceFrameResults;
-		RotateTransform rotateTransform = new RotateTransform();
+		private Dictionary<ulong, RotateTransform> rotateTransforms = new Dictionary<ulong, RotateTransform>();
 		private int displayWidth;
 		private int displayHeight;
 
@@ -148,6 +148,17 @@ namespace KinectV2InteractivePaint
 				}
 			}
 
+		/*	engagement.Disengaged += (source, args) =>
+			{
+				foreach (KeyValuePair<ulong, Image> k in cursors)
+				{
+					ulong id = k.Key;
+					if (!engagement.engagedBodies.Contains(id)){
+						cursors.rem
+					}
+				}
+			};*/
+
 		}
 
 
@@ -252,12 +263,12 @@ namespace KinectV2InteractivePaint
 					drawArea.Children.Remove(colourSwatches[body.TrackingId]);
 					if (angle > -1)
 					{
-						//	startStopGestures.penUp[body.TrackingId] = true;
+						
 						Color newColour = ColourGestures.HsvToRgb(angle, 1, 1);
 						colours[body.TrackingId] = new SolidColorBrush(newColour);
 						colourSwatches[body.TrackingId].Fill = colours[body.TrackingId];
 						drawArea.Children.Add(colourSwatches[body.TrackingId]);
-						startStopGestures.penUp[body.TrackingId] = false;
+						startStopGestures.penUp[body.TrackingId] = true;
 
 					}
 					
@@ -299,11 +310,24 @@ namespace KinectV2InteractivePaint
 				{
 					if (cursors.ContainsKey(body.TrackingId))
 					{
+						drawArea.Children.Remove(cursors[body.TrackingId]);
+
 						cursors.Remove(body.TrackingId);
+						rotateTransforms.Remove(body.TrackingId);
 					}
 					if (colourSwatches.ContainsKey(body.TrackingId))
 					{
+						drawArea.Children.Remove(colourSwatches[body.TrackingId]);
+
 						colourSwatches.Remove(body.TrackingId);
+					}
+					if (previousPoints.ContainsKey(body.TrackingId))
+					{
+						if (previousPoints[body.TrackingId] != null)
+						{
+							FinishSegment(body.TrackingId);
+						}
+						previousPoints.Remove(body.TrackingId);
 					}
 				}
 
@@ -470,6 +494,7 @@ namespace KinectV2InteractivePaint
 			{
 				penImg = new Image();
 				cursors.Add(body, penImg);
+				rotateTransforms.Add(body, new RotateTransform());
 			}
 			if (!previousPoints.ContainsKey(body))
 				{
@@ -493,8 +518,9 @@ namespace KinectV2InteractivePaint
 					previousPoints[body].Points.Add(currentPoint);
 
 				}
-				previousPoints[body].Stroke = colours[body];
 				
+				previousPoints[body].Stroke = colours[body];
+
 				int last = previousPoints[body].Points.Count - 1;
 				Point previousPoint = previousPoints[body].Points[last];
 				double smoothing = 1 - 0.5;
@@ -507,7 +533,7 @@ namespace KinectV2InteractivePaint
 				}
 				if (engagement.Draw(body) == HandType.LEFT)
 				{
-					
+
 					penImg.Source = penLeftClipArt;
 					penImg.Width = penLeftClipArt.Width / scaling;
 					penImg.Height = penLeftClipArt.Height / scaling;
@@ -526,8 +552,8 @@ namespace KinectV2InteractivePaint
 					currentPoint.X -= penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
 				}
-					rotateTransform.Angle = 0;
-					penImg.RenderTransform = rotateTransform;
+				rotateTransforms[body].Angle = 0;
+				penImg.RenderTransform = rotateTransforms[body];
 
 				cursors[body] = penImg;
 				drawArea.Children.Add(penImg);
@@ -535,9 +561,9 @@ namespace KinectV2InteractivePaint
 
 				if (previousPoint != null)
 				{
-				//	drawArea.Children.Remove(currentDrawingSegment);
-				//	currentDrawingSegment.Points.Add(currentPoint);
-					
+					//	drawArea.Children.Remove(currentDrawingSegment);
+					//	currentDrawingSegment.Points.Add(currentPoint);
+
 					Line line = new Line();
 					line.Stroke = colours[body];
 					line.X1 = previousPoint.X;
@@ -548,8 +574,7 @@ namespace KinectV2InteractivePaint
 
 					previousPoints[body].Points.Add(currentPoint);
 					drawArea.Children.Add(line);
-
-
+					
 				}
 			}
 			else
@@ -581,7 +606,7 @@ namespace KinectV2InteractivePaint
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X += penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
-					rotateTransform.Angle = -25;
+					rotateTransforms[body].Angle = -25;
 					
 				}
 				if (engagement.Draw(body) == HandType.RIGHT)
@@ -593,58 +618,71 @@ namespace KinectV2InteractivePaint
 					Canvas.SetTop(penImg, currentPoint.Y - penImg.Height / 2);
 					currentPoint.X -= penImg.Width / 2;
 					currentPoint.Y += penImg.Height / 2;
-					rotateTransform.Angle = 25;
+					rotateTransforms[body].Angle = 25;
 					
 				}
 
 				cursors[body] = penImg;
-				penImg.RenderTransform = rotateTransform;
+				penImg.RenderTransform = rotateTransforms[body];
 
 				drawArea.Children.Add(penImg);
 
-				Polyline currentDrawingSegment = previousPoints[body];
 
-				if (currentDrawingSegment.Points.Count > 1)
+				FinishSegment(body);
+
+			}
+		}
+
+		private void FinishSegment(ulong body)
+		{
+			Polyline currentDrawingSegment = previousPoints[body];
+			
+			if (currentDrawingSegment.Points.Count > 1)
+			{
+				currentDrawingSegment.Points.RemoveAt(currentDrawingSegment.Points.Count - 1);
+				drawingSegments.Add(currentDrawingSegment);
+				previousPoints[body] = null;
+
+				DockPanel screenDisplay = userVideo;
+				DockPanel userEnticement = enticement;
+				Viewbox useInstructions = instructions;
+				drawArea.Children.Clear();
+				drawArea.Children.Add(screenDisplay);
+				drawArea.Children.Add(useInstructions);
+				drawArea.Children.Add(userEnticement);
+
+				// drawArea.Children.Add(rect);
+				// Canvas.SetLeft(rect, 500);
+				// Canvas.SetTop(rect, 500);
+
+				foreach (Polyline poly in drawingSegments)
 				{
-					drawingSegments.Add(currentDrawingSegment);
-					previousPoints[body] = null;
-
-					DockPanel screenDisplay = userVideo;
-					drawArea.Children.Clear();
-					drawArea.Children.Add(screenDisplay);
-					// drawArea.Children.Add(rect);
-					// Canvas.SetLeft(rect, 500);
-					// Canvas.SetTop(rect, 500);
-
-					foreach (Polyline poly in drawingSegments)
-					{
-						drawArea.Children.Add(poly);
-					}
-
-					foreach (KeyValuePair<ulong, Polyline> drawing in previousPoints)
-					{
-						if (drawing.Value != null)
-						{
-							drawArea.Children.Add(drawing.Value);
-						}
-					}
-						foreach (Point p in currentDrawingSegment.Points)
-					{
-						int drawingSegmentFace = this.PointOnFace(p);
-						if (drawingSegmentFace != -1)
-						{
-							if (!drawingSegmentsFaces.ContainsKey(drawingSegmentFace))
-							{
-								drawingSegmentsFaces.Add(drawingSegmentFace, new List<Polyline>());
-							}
-							drawingSegmentsFaces[drawingSegmentFace].Add(currentDrawingSegment);
-
-							// only take first face
-							break;
-						}
-					}
-					previousPoints[body] = null;
+					drawArea.Children.Add(poly);
 				}
+
+				foreach (KeyValuePair<ulong, Polyline> drawing in previousPoints)
+				{
+					if (drawing.Value != null)
+					{
+						drawArea.Children.Add(drawing.Value);
+					}
+				}
+				foreach (Point p in currentDrawingSegment.Points)
+				{
+					int drawingSegmentFace = this.PointOnFace(p);
+					if (drawingSegmentFace != -1)
+					{
+						if (!drawingSegmentsFaces.ContainsKey(drawingSegmentFace))
+						{
+							drawingSegmentsFaces.Add(drawingSegmentFace, new List<Polyline>());
+						}
+						drawingSegmentsFaces[drawingSegmentFace].Add(currentDrawingSegment);
+
+						// only take first face
+						break;
+					}
+				}
+				previousPoints[body] = null;
 			}
 		}
 
