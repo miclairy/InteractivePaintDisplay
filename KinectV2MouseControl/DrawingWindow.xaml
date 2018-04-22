@@ -23,7 +23,7 @@
 
 			<Viewbox  x:Name="instructions" Height="338" Canvas.Left="19" Canvas.Top="73" Width="373">
 				<Image Height="160" Width="177" Source="interactivePaintInstructions.jpg"/>
-					
+			</Viewbox>
 		</Canvas>
 		</ContentControl>
 
