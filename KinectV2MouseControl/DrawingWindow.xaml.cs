@@ -71,7 +71,7 @@ namespace KinectV2InteractivePaint
 			this.coordinateMapper = this.kinectSensor.CoordinateMapper;
 			this.displayWidth = colorFrameDescription.Width;
 			this.displayHeight = colorFrameDescription.Height;
-
+			InitializeComponent();
 			// create the bitmap to display
 			this.colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
 
@@ -126,7 +126,7 @@ namespace KinectV2InteractivePaint
 			// app.KinectRegion = kinectRegion;
 			
 			this.engagement = new EngagementManager(kinectSensor);
-			InitializeComponent();
+			
 
 		}
 
@@ -241,8 +241,8 @@ namespace KinectV2InteractivePaint
 
 				if (body.IsTracked && engagement.engagedBodies.Contains(body.TrackingId))
 				{
-					float scaleFactorX = (float) Width / displayWidth;
-					float scaleFactorY = (float) Height / displayHeight;
+					float scaleFactorX = (float) ActualWidth / displayWidth;
+					float scaleFactorY = (float) ActualHeight / displayHeight;
 					// only works well if the window is the same ratio
 					if (scaleFactorX > 1)
 					{
@@ -416,8 +416,8 @@ namespace KinectV2InteractivePaint
 			
 			// draw the face bounding box
 			var faceBoxSource = faceResult.FaceBoundingBoxInColorSpace;
-			float scaleFactorX = (float)Width / displayWidth;
-			float scaleFactorY = (float)Height / displayHeight;
+			float scaleFactorX = (float)ActualWidth / displayWidth;
+			float scaleFactorY = (float)ActualHeight / displayHeight;
 			// only works well if the window is the same ratio
 			if (scaleFactorX > 1)
 			{
@@ -771,8 +771,8 @@ namespace KinectV2InteractivePaint
 				if (faceFrameResults[i] != null)
 				{
 					var faceBoxSource = faceFrameResults[i].FaceBoundingBoxInColorSpace;
-					float scaleFactorX = (float)Width / displayWidth;
-					float scaleFactorY = (float)Height / displayHeight;
+					float scaleFactorX = (float)ActualWidth / displayWidth;
+					float scaleFactorY = (float)ActualHeight / displayHeight;
 					// only works well if the window is the same ratio
 					if (scaleFactorX > 1)
 					{
