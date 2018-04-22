@@ -65,7 +65,7 @@ namespace KinectV2InteractivePaint
 						this.Reset(id);
 					}
 				}
-			} else if (result == GestureResult.Fail || this.frameCount[id] == 50)
+			} else if (result == GestureResult.Fail || this.frameCount[id] == 80)
 			{
 				this.Reset(id);
 			} else
