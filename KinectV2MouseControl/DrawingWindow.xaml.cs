@@ -39,6 +39,8 @@ namespace KinectV2InteractivePaint
 		private int displayWidth;
 		private int displayHeight;
 
+		private Point notJoinedPrevPos = new Point(0, 0);
+
 		private List<Polyline> drawingSegments = new List<Polyline>();
 		// private Polyline currentDrawingSegment;
 		private Dictionary<int, List<Polyline>> drawingSegmentsFaces = new Dictionary<int, List<Polyline>>();
@@ -242,12 +244,27 @@ namespace KinectV2InteractivePaint
 					
 					CameraSpacePoint handLeftPoint = body.Joints[JointType.HandLeft].Position;
 					CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
+					CameraSpacePoint spineBase = body.Joints[JointType.SpineBase].Position;
+
 					// Console.WriteLine(body.HandLeftConfidence);
-								
+
 					ColorSpacePoint handLeft = coordinateMapper.MapCameraPointToColorSpace(handLeftPoint);
 					ColorSpacePoint handRight = coordinateMapper.MapCameraPointToColorSpace(handRightPoint);
-					//		Console.WriteLine(handLeftPoint.X + " " + handRightPoint.X);
 					double angle = ColourGestures.DetectColourGestures(handLeftPoint, handRightPoint);
+					Point last = new Point(handLeft.X, handLeft.Y);
+					if (previousPoints.ContainsKey(body.TrackingId) && previousPoints[body.TrackingId] != null && previousPoints[body.TrackingId].Points.Count > 0)
+					{
+						last = previousPoints[body.TrackingId].Points[previousPoints[body.TrackingId].Points.Count - 1];
+
+					}
+					
+					double notJoinedLeftX = (last.X + ((handLeftPoint.X - spineBase.X ) * drawArea.ActualWidth - last.X ));
+					double notJoinedLeftY = (last.Y + ((spineBase.Y - handLeftPoint.Y) * drawArea.ActualHeight - last.Y ));
+
+					Point notJoinedLeft = new Point(notJoinedLeftX + drawArea.ActualWidth / 2, notJoinedLeftY + drawArea.ActualHeight);
+					notJoinedPrevPos = notJoinedLeft;
+					Console.WriteLine("my calcualtaion " + notJoinedLeft.X + " " + notJoinedLeft.Y );
+					
 					Ellipse colourSwatch = new Ellipse()
 					{
 						HorizontalAlignment = HorizontalAlignment.Left,
@@ -278,9 +295,19 @@ namespace KinectV2InteractivePaint
 						startStopGestures.DetectLeftGestures(body, handLeftPoint);
 						startStopGestures.DetectStopGesture(body, handLeftPoint, handRightPoint);
 						Point currentPoint = new Point(handLeft.X, handLeft.Y);
+
+						float closenessFactor = handLeftPoint.Z / 4;  
+						if (closenessFactor > 1)
+						{
+							closenessFactor = 1;
+						}
+						
+
 						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
 							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
 						{
+							currentPoint.X = (1 - closenessFactor) * currentPoint.X + (notJoinedLeft.X * (closenessFactor));
+							currentPoint.Y = (1 - closenessFactor) * currentPoint.Y + (notJoinedLeft.Y * (closenessFactor));
 							Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
 
 							Canvas.SetTop(colourSwatches[body.TrackingId], handLeft.Y - 70);
@@ -478,7 +505,8 @@ namespace KinectV2InteractivePaint
 			{
 			
 				Point currentPoint = new Point(kinectPointerPoint.Position.X * drawArea.ActualWidth, kinectPointerPoint.Position.Y * drawArea.ActualHeight); // MouseControl.GetCursorPosition();
-				// Draw(currentPoint);
+																																							 // Draw(currentPoint);
+				Console.WriteLine("kinect point " + drawArea.ActualWidth + " " + drawArea.ActualHeight);
 			} 
         }
 
@@ -559,7 +587,7 @@ namespace KinectV2InteractivePaint
 				drawArea.Children.Add(penImg);
 
 
-				if (previousPoint != null)
+				if (previousPoint != null && previousPoint != currentPoint)
 				{
 					//	drawArea.Children.Remove(currentDrawingSegment);
 					//	currentDrawingSegment.Points.Add(currentPoint);
