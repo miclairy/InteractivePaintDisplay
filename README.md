@@ -7,6 +7,10 @@ Built in Visual Studio
 Please excuse the messiness of this code. Beware there is a lot of dead code in here
 
 <h2>Controls:</h2> 
+* Item 1
+* Item 2
+  * Item 2a
+  * Item 2b
 * Wave to get a pen
 * Push hand forewards to start drawing
 * Pull hand back to stop drawing
