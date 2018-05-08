@@ -2,8 +2,8 @@
 This is an interactive public display for a cafe using the kinect. It is essitentually a paint application but 
 if you draw on a face then the drawing will move with the face.
 
-Requires the kinect and kinect SDK
-Built in Visual Studio
+* Requires the kinect and kinect SDK  
+* Built in Visual Studio  
 Please excuse the messiness of this code. Beware there is a lot of dead code in here
 
 ## Controls:
