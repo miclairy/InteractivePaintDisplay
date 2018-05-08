@@ -15,8 +15,6 @@ namespace KinectV2InteractivePaint
 {
 	public partial class DrawingWindow: Window
     {
-        MouseControl mouseControl = new MouseControl();
-	//	KinectControl kinectControl = new KinectControl();
        // private Point previousPoint;
 		private bool draw = false;
 		private BitmapImage penLeftClipArt = new BitmapImage(new Uri("pack://application:,,,/penDownLeft.png", UriKind.Absolute));
