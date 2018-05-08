@@ -19,3 +19,5 @@ Please excuse the messiness of this code. Beware there is a lot of dead code in 
 * Works with two people drawing at once.
 * If you draw on another person face the drawing will move with them
 * Adapted control algorithm so you can easily draw from 0.5m to 4.65m away from the kinect.
+
+![Screen Shot](Capture.PNG)
