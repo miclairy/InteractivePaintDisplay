@@ -15,7 +15,7 @@ namespace KinectV2InteractivePaint
 {
 	public partial class DrawingWindow: Window
     {
-        MouseControl mouseControl = new MouseControl();
+       
 	//	KinectControl kinectControl = new KinectControl();
        // private Point previousPoint;
 		private bool draw = false;
@@ -252,7 +252,7 @@ namespace KinectV2InteractivePaint
 					{
 						scaleFactorY = 1;
 					}
-					// Console.WriteLine("raw : "+ handLeft.X + " " + handLeft.Y + " " + displayHeight + " " + Height);
+					//Console.WriteLine("raw : "+ handLeft.X + " " + handLeft.Y + " " + displayHeight + " " + Height);
 
 					CameraSpacePoint handLeftPoint = body.Joints[JointType.HandLeft].Position;
 					CameraSpacePoint handRightPoint = body.Joints[JointType.HandRight].Position;
@@ -282,7 +282,6 @@ namespace KinectV2InteractivePaint
 					double notJoinedLeftY = (last.Y + ((spineBase.Y - handLeftPoint.Y) * drawArea.ActualHeight - last.Y ));
 					Point notJoinedLeft = new Point(notJoinedLeftX + drawArea.ActualWidth / 2, notJoinedLeftY + drawArea.ActualHeight);
 					notJoinedPrevPos = notJoinedLeft;
-					// Console.WriteLine("my calcualtaion " + notJoinedLeft.X + " " + notJoinedLeft.Y );
 
 					double notJoinedRightX = (last.X + ((handRightPoint.X - spineBase.X) * drawArea.ActualWidth - last.X));
 					double notJoinedRightY = (last.Y + ((spineBase.Y - handRightPoint.Y) * drawArea.ActualHeight - last.Y));
@@ -324,7 +323,7 @@ namespace KinectV2InteractivePaint
 						{
 							closenessFactor = 1;
 						}
-						
+
 
 						if (currentPoint.X < Double.PositiveInfinity && currentPoint.X > Double.NegativeInfinity &&
 							currentPoint.Y < Double.PositiveInfinity && currentPoint.Y > Double.NegativeInfinity)
@@ -332,6 +331,7 @@ namespace KinectV2InteractivePaint
 							currentPoint.X = (1 - closenessFactor) * currentPoint.X + (notJoinedLeft.X * (closenessFactor));
 							currentPoint.Y = (1 - closenessFactor) * currentPoint.Y + (notJoinedLeft.Y * (closenessFactor));
 							Draw(currentPoint, body.TrackingId, handLeftPoint.Z);
+							Console.WriteLine(currentPoint.X + "," + currentPoint.Y);
 
 							Canvas.SetTop(colourSwatches[body.TrackingId], handLeft.Y - 70);
 							Canvas.SetLeft(colourSwatches[body.TrackingId], handLeft.X + 10);
@@ -427,7 +427,7 @@ namespace KinectV2InteractivePaint
 			{
 				scaleFactorY = 1;
 			}
-			Console.WriteLine(faceBoxSource.Left +" " + Convert.ToInt32(scaleFactorX * faceBoxSource.Left));
+		//	Console.WriteLine(faceBoxSource.Left +" " + Convert.ToInt32(scaleFactorX * faceBoxSource.Left));
 			faceBoxSource.Left = Convert.ToInt32(scaleFactorX * faceBoxSource.Left);
 			faceBoxSource.Top = Convert.ToInt32(scaleFactorY * faceBoxSource.Top);
 			faceBoxSource.Right = Convert.ToInt32(scaleFactorX * faceBoxSource.Right);
@@ -782,7 +782,7 @@ namespace KinectV2InteractivePaint
 					{
 						scaleFactorY = 1;
 					}
-					Console.WriteLine(faceBoxSource.Left + " " + Convert.ToInt32(scaleFactorX * faceBoxSource.Left));
+					// Console.WriteLine(faceBoxSource.Left + " " + Convert.ToInt32(scaleFactorX * faceBoxSource.Left));
 					faceBoxSource.Left = Convert.ToInt32(scaleFactorX * faceBoxSource.Left);
 					faceBoxSource.Top = Convert.ToInt32(scaleFactorY * faceBoxSource.Top);
 					faceBoxSource.Right = Convert.ToInt32(scaleFactorX * faceBoxSource.Right);

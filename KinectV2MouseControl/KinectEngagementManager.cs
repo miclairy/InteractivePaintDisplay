@@ -178,7 +178,7 @@ namespace KinectV2InteractivePaint
 				{
 					engagedHands.Add(e.trackingId, HandType.LEFT);
 				}
-				Console.WriteLine("Detected left wave");
+				//Console.WriteLine("Detected left wave");
 
 			}
 			if (e.type == GestureType.waveRight)
@@ -192,7 +192,7 @@ namespace KinectV2InteractivePaint
 					engagedHands.Add(e.trackingId, HandType.RIGHT);
 				}
 
-				Console.WriteLine("Detected right wave");
+				//Console.WriteLine("Detected right wave");
 				
 			}
 			if (e.type == GestureType.stopDrawingLeft || e.type == GestureType.stopDrawingRight)
@@ -210,7 +210,7 @@ namespace KinectV2InteractivePaint
 					engagedHands.Remove(e.trackingId);
 					engagedBodies.Remove(e.trackingId);
 					//	this.Disengaged(this, e);
-					Console.WriteLine("Detected drop");
+					// Console.WriteLine("Detected drop");
 				}
 				
 			}

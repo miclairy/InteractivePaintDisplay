@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:k="http://schemas.microsoft.com/kinect/2014"
-		Title="Draw" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
-        WindowState="Maximized">
+		Title="Draw" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" MinWidth="1867" MinHeight="1080" 
+       >
 
 
 		<ContentControl x:Name="inputRegion">
